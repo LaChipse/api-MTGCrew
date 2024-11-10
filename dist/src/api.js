@@ -17,12 +17,13 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cors({
-    origin: 'http://localhost:3000', // Remplacez par l'URL de votre client
+    origin: config_1.config.app_url, // Remplacez par l'URL de votre client
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Méthodes HTTP autorisées
     allowedHeaders: ['Content-Type', 'Authorization', 'Pragma', 'Source'], // En-têtes autorisés
 }));
-app.use('/api/auth', auth_1.default);
-app.use('/api/user', user_1.default);
-app.use('/api/deck', deck_1.default);
+app.use('/auth', auth_1.default);
+app.use('/user', user_1.default);
+app.use('/deck', deck_1.default);
+app.use('', auth_1.default);
 exports.default = app;
 //# sourceMappingURL=api.js.map

@@ -1,5 +1,6 @@
-import bcrypt from 'bcrypt';
 const jwt = require('jsonwebtoken');
+
+import bcrypt from 'bcrypt';
 import users from '../models/users';
 
 //Création d'un utilisateur
@@ -41,4 +42,10 @@ const login = async (req, res) => {
 };
 
 
-export default { signup, login };
+//Teste
+const test = async (req, res) => {
+    res.send("Express on Vercel");
+};
+
+
+export default { signup, login, test };

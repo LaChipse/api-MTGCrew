@@ -6,9 +6,14 @@
     "moduleResolution": "node",
     "sourceMap": true,
     "outDir": "dist",
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "lib": ["es2015"]
   },
-  "include": ["src/**/*.ts"],
+  "include": [
+    "api/**/*.ts",
+    "src/**/*.ts"
+  ],
   "exclude": ["node_modules"]
 }
     

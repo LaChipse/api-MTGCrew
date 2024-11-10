@@ -47,5 +47,9 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         return res.status(200).json({ userId: user.id, token: jwt.sign({ id: user.id }, 'shhhhh', { expiresIn: '24h' }) });
     });
 });
-exports.default = { signup, login };
+//Teste
+const test = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    res.send("Express on Vercel");
+});
+exports.default = { signup, login, test };
 //# sourceMappingURL=auth.js.map

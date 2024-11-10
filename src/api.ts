@@ -10,7 +10,7 @@ import deck from './routes/deck'
 
 // Connect to MongoDB
 
-mongoose.connect(config.srv_mongo);
+mongoose.connect(config.srv_mongo as string);
 
 const app = express();
 
@@ -19,14 +19,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use(cors({
-    origin: 'http://localhost:5173', // Remplacez par l'URL de votre client
+    origin: config.app_url, // Remplacez par l'URL de votre client
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Méthodes HTTP autorisées
     allowedHeaders: ['Content-Type', 'Authorization', 'Pragma', 'Source'], // En-têtes autorisés
 }));
 
-app.use('/api/auth', auth);
-app.use('/api/user', user);
-app.use('/api/deck', deck);
+app.use('/auth', auth);
+app.use('/user', user);
+app.use('/deck', deck);
+
 
 export default app;
 

@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 dotenv.config({ path: '.env', override: true });
 exports.config = {
     "srv_mongo": process.env.SRV_MONGO,
-    "secret_key": process.env.SECRET_KEY
+    "secret_key": process.env.SECRET_KEY,
+    "app_url": process.env.APP_URL
 };
 //# sourceMappingURL=config.js.map
