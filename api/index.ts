@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 
 import mongoose from 'mongoose';
@@ -15,6 +16,12 @@ const app = express();
 
 // Middleware pour gérer les requêtes en JSON
 app.use(express.json());
+// Servir les fichiers statiques du dossier 'dist'
+app.use(express.static(path.join('/', 'dist')));
+app.use('/manifest.webmanifest', (req, res) => {
+    res.setHeader('Content-Type', 'application/manifest+json');
+    res.sendFile(path.resolve('/', 'manifest.webmanifest'));
+});
 app.use(express.urlencoded({ extended: false }));
 
 app.use(cors());

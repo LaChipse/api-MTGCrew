@@ -24,12 +24,15 @@ const connection = mongoose_1.default.connect(config_1.config.srv_mongo);
 const app = express();
 // Middleware pour gérer les requêtes en JSON
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cors({
-    origin: config_1.config.app_url, // Remplacez par l'URL de votre client
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Méthodes HTTP autorisées
-    allowedHeaders: ['Content-Type', 'Authorization', 'Pragma', 'Source'], // En-têtes autorisés
+app.use(express.static('public', {
+    setHeaders: (res, path) => {
+        if (path.endsWith('.webmanifest')) {
+            res.setHeader('Content-Type', 'application/manifest+json');
+        }
+    }
 }));
+app.use(express.urlencoded({ extended: false }));
+app.use(cors());
 app.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.status(200).send(`Connexion réussie à MongoDB: ${(yield connection).Connection.name}`);
 }));
