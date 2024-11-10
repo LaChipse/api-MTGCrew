@@ -18,10 +18,6 @@ const app = express();
 app.use(express.json());
 // Servir les fichiers statiques du dossier 'dist'
 app.use(express.static(path.join('/', 'dist')));
-app.use('/manifest.webmanifest', (req, res) => {
-    res.setHeader('Content-Type', 'application/manifest+json');
-    res.sendFile(path.resolve('/', 'manifest.webmanifest'));
-});
 app.use(express.urlencoded({ extended: false }));
 
 app.use(cors());
