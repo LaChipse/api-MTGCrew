@@ -23,6 +23,12 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'Pragma', 'Source'], // En-têtes autorisés
 }));
 
+
+app.get("/", async (req, res) => {
+    const response = await fetch('https://api.ipify.org?format=json');
+    const data = await response.json() as any;
+    res.status(200).json({ ip: data.ip });
+});
 app.use('/auth', auth);
 app.use('/user', user);
 app.use('/deck', deck);
