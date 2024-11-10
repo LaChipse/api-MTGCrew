@@ -9,6 +9,5 @@ router.post('/signup', authCtrl.signup);
 router.post('/login', authCtrl.login);
 router.get('', authCtrl.test);
 
-
 //Exportation
 export default router;

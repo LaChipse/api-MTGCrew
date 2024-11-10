@@ -2,11 +2,20 @@
   "name": "api",
   "version": "1.0.0",
   "description": "",
-  "main": "index.ts",
+  "main": "api/index.ts",
   "scripts": {
     "start": "node api/index.ts",
+    "start:nodemon": "tsc && nodemon api/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "tslint"
+    "lint": "tslint",
+    "start:dev": "nodemon"
+  },
+  "nodemonConfig": {
+    "watch": [
+      "src/"
+    ],
+    "ext": "ts",
+    "exec": "ts-node api/server.ts"
   },
   "author": "",
   "license": "ISC",
