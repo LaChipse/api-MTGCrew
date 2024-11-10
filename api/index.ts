@@ -17,12 +17,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.use(cors({
-    origin: config.app_url, // Remplacez par l'URL de votre client
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Méthodes HTTP autorisées
-    allowedHeaders: ['Content-Type', 'Authorization', 'Pragma', 'Source'], // En-têtes autorisés
-}));
-
+app.use(cors());
 
 app.get("/", async (req, res) => {
     res.status(200).send(`Connexion réussie à MongoDB: ${(await connection).Connection.name}`);
