@@ -9,7 +9,7 @@ import user from '../src/routes/user'
 import deck from '../src/routes/deck'
 
 // Connect to MongoDB
-mongoose.connect(config.srv_mongo as string);
+const connection = mongoose.connect(config.srv_mongo as string);
 
 const app = express();
 
@@ -25,9 +25,7 @@ app.use(cors({
 
 
 app.get("/", async (req, res) => {
-    const response = await fetch('https://api.ipify.org?format=json');
-    const data = await response.json() as any;
-    res.status(200).json({ ip: data.ip });
+    res.status(200).send(`Connexion réussie à MongoDB: ${(await connection).Connection.name}`);
 });
 app.use('/auth', auth);
 app.use('/user', user);

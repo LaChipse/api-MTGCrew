@@ -12,7 +12,8 @@
   },
   "nodemonConfig": {
     "watch": [
-      "src/"
+      "src/",
+      "api/"
     ],
     "ext": "ts",
     "exec": "ts-node api/server.ts"

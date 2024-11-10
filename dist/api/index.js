@@ -20,7 +20,7 @@ const auth_1 = __importDefault(require("../src/routes/auth"));
 const user_1 = __importDefault(require("../src/routes/user"));
 const deck_1 = __importDefault(require("../src/routes/deck"));
 // Connect to MongoDB
-mongoose_1.default.connect(config_1.config.srv_mongo);
+const connection = mongoose_1.default.connect(config_1.config.srv_mongo);
 const app = express();
 // Middleware pour gérer les requêtes en JSON
 app.use(express.json());
@@ -31,9 +31,7 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'Pragma', 'Source'], // En-têtes autorisés
 }));
 app.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const response = yield fetch('https://api.ipify.org?format=json');
-    const data = yield response.json();
-    res.status(200).json({ ip: data.ip });
+    res.status(200).send(`Connexion réussie à MongoDB: ${(yield connection).Connection.name}`);
 }));
 app.use('/auth', auth_1.default);
 app.use('/user', user_1.default);
