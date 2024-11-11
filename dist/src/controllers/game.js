@@ -13,57 +13,86 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const mongodb_1 = require("mongodb");
 const config_1 = require("../config/config");
 const date_fns_1 = require("date-fns");
 const decks_1 = __importDefault(require("../models/decks"));
 const games_1 = __importDefault(require("../models/games"));
 const users_1 = __importDefault(require("../models/users"));
 // Récuperation de mes decks
-const getMyGames = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const userId = decodedToken.id;
-    const tes = new mongodb_1.ObjectId(userId);
-    const mineDecks = yield decks_1.default.find({ userId: tes });
-    res.status(200).json(mineDecks);
+    const allGames = yield games_1.default.aggregate([
+        {
+            $unwind: {
+                path: "$config"
+            }
+        },
+        {
+            $match: {
+                "config.userId": userId
+            }
+        }
+    ]);
+    const response = allGames.map((game) => ({
+        id: game._id,
+        date: game.date,
+        type: game.type,
+        config: game.config,
+        victoire: game.victoire,
+        typeVictoire: game.typeVictoire
+    }));
+    res.status(200).json(response);
 });
 // Récuperation des parties
 const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const allGames = yield games_1.default.find();
     const response = allGames.map((game) => ({
         id: game._id,
+        date: game.date,
+        type: game.type,
+        config: game.config,
+        victoire: game.victoire,
+        typeVictoire: game.typeVictoire
     }));
     res.status(200).json(response);
 });
 // Ajout d'une partie
 const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     let winners = [];
+    let decksWinners = [];
     const gameObject = req.body;
-    const { date, type, config, victoire, typeVictoire } = gameObject;
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jsonwebtoken_1.default.verify(token, config.secret_key);
+    const { date, type, config: configGame, victoire } = gameObject;
+    const tricheryRolVictory = (role) => {
+        if (victoire === 'Seigneur')
+            return role === victoire || role === 'Gardien';
+        return role === victoire;
+    };
     const formatDate = date ? (0, date_fns_1.format)(date, 'dd/MM/yyyy') : '';
-    const usersPlayer = [...new Set(config.map((conf) => conf.userId))];
+    const usersPlayer = [...new Set(configGame.map((conf) => conf.userId))];
+    const deckPlayer = [...new Set(configGame.map((conf) => conf.deckId))];
     if (type === 'each') {
         winners = [victoire];
+        decksWinners = configGame.filter((conf) => conf.userId === victoire).map((winner) => winner.deckId);
     }
     else if (type === 'team') {
-        winners = config.filter((conf) => conf.team === victoire).map((winner) => winner.userId);
+        winners = configGame.filter((conf) => conf.team === victoire).map((winner) => winner.userId);
+        decksWinners = configGame.filter((conf) => conf.team === victoire).map((winner) => winner.deckId);
     }
     else if (type === 'treachery') {
-        winners = config.filter((conf) => conf.role === victoire).map((winner) => winner.userId);
+        winners = configGame.filter((conf) => tricheryRolVictory(conf.role)).map((winner) => winner.userId);
+        decksWinners = configGame.filter((conf) => tricheryRolVictory(conf.role)).map((winner) => winner.deckId);
     }
-    console.log('WINNERS', winners);
-    console.log('usersPlayer', usersPlayer);
-    const userId = decodedToken.id;
     yield games_1.default.create(Object.assign(Object.assign({}, gameObject), { date: formatDate }))
         .then(() => __awaiter(void 0, void 0, void 0, function* () {
-        yield users_1.default.updateMany({ _id: { $in: usersPlayer } }, { $inc: { partiesJouees: 1 } });
+        yield users_1.default.updateMany({ _id: { $in: [...new Set(usersPlayer)] } }, { $inc: { partiesJouees: 1 } });
         yield users_1.default.updateMany({ _id: { $in: [...new Set(winners)] } }, { $inc: { victoires: 1 } });
-        res.status(200).json('partie ajoutée');
+        yield decks_1.default.updateMany({ _id: { $in: [...new Set(deckPlayer)] } }, { $inc: { parties: 1 } });
+        yield decks_1.default.updateMany({ _id: { $in: [...new Set(decksWinners)] } }, { $inc: { victoires: 1 } });
+        res.status(200).json({ config: configGame, victoire });
     }))
         .catch(error => res.status(400).json({ error }));
 });
-exports.default = { getAll, add };
+exports.default = { getAll, add, history };
 //# sourceMappingURL=game.js.map

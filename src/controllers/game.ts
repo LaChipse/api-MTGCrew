@@ -12,15 +12,44 @@ interface TokenPayload extends JwtPayload {
 }
 
 // Récuperation de mes decks
-const getMyGames = async (req, res) => {
+const history = async (req, res) => {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
 
     const userId = decodedToken.id;
-    const tes = new ObjectId(userId)
-    const mineDecks = await decks.find({userId: tes})
+    const allGames = await games.aggregate([
+        {
+            $match: {
+                "config.userId": userId
+            }
+        }
+    ])
 
-    res.status(200).json(mineDecks)
+    const response = allGames.map((game) => (
+        {
+            id: game._id,
+            date: game.date,
+            type: game.type,
+            config: game.config,
+            victoire: game.victoire, 
+            typeVictoire: game.typeVictoire
+        }
+    ))
+
+
+
+    res.status(200).json(response)
+}
+
+// Compte le nombre de parties
+const count = async (req, res) => {
+    const countGames = await games.aggregate([
+        {
+            $count:"count"
+        }
+    ])
+
+    res.status(200).json(countGames?.[0]?.count || 0)
 }
 
 // Récuperation des parties
@@ -96,4 +125,4 @@ const add = async (req, res) => {
         .catch(error => res.status(400).json({ error }));
 }
 
-export default { getAll, add };
+export default { getAll, add, history, count };
