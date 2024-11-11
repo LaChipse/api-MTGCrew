@@ -20,6 +20,7 @@ const config_1 = require("../src/config/config");
 const auth_1 = __importDefault(require("../src/routes/auth"));
 const user_1 = __importDefault(require("../src/routes/user"));
 const deck_1 = __importDefault(require("../src/routes/deck"));
+const game_1 = __importDefault(require("../src/routes/game"));
 // Connect to MongoDB
 const connection = mongoose_1.default.connect(config_1.config.srv_mongo);
 const app = express();
@@ -35,5 +36,6 @@ app.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 app.use('/auth', auth_1.default);
 app.use('/user', user_1.default);
 app.use('/deck', deck_1.default);
+app.use('/game', game_1.default);
 exports.default = app;
 //# sourceMappingURL=index.js.map

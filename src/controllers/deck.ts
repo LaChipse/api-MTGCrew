@@ -1,22 +1,48 @@
 import jwt, { JwtPayload } from 'jsonwebtoken'
-import decks from '../models/decks'
+import decks, { Deck } from '../models/decks'
 import { ObjectId } from 'mongodb'
 import { config } from '../config/config';
-import users from '../models/users';
+import users, { User } from '../models/users';
 
 interface TokenPayload extends JwtPayload {
     id: string;
 }
 
-// Récuperation des decks
-const getAll = async (req, res) => {
+// Récuperation de mes decks
+const getMine = async (req, res) => {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
 
     const userId = decodedToken.id;
-    const allDecks = await decks.find({userId: userId})
+    const tes = new ObjectId(userId)
+    const mineDecks = await decks.find({userId: tes})
 
-    res.status(200).json(allDecks)
+    res.status(200).json(mineDecks)
+}
+
+// Récuperation des decks
+const getAll = async (req, res) => {
+    const allDecks = await decks.aggregate<Deck & { users: Array<User> }>([
+        {
+            $lookup: {
+                from: "users",
+                localField: "userId",
+                foreignField: "_id",
+                as: "users"
+            }
+        }
+    ])
+
+    const response = allDecks.map((deck) => (
+        {
+            id: deck._id,
+            nom: deck.nom,
+            userId: deck.userId,
+            userFullName: `${deck.users[0]?.prenom} ${deck.users[0]?.nom.charAt(0)}.`
+        }
+    ))
+
+    res.status(200).json(response)
 }
 
 // Ajout d'un deck
@@ -26,7 +52,7 @@ const add = async (req, res) => {
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
 
     const userId = decodedToken.id;
-    await decks.create({...deckObject, userId, parties: 0, victoires: 0})
+    await decks.create({...deckObject, userId: new ObjectId(userId), parties: 0, victoires: 0})
         .then(async () => { 
             await users.updateOne(
                 { _id: new ObjectId(userId) },
@@ -81,4 +107,4 @@ const update = async (req, res) => {
         .catch(error => res.status(400).json({ error }));
 }
 
-export default { getAll, add, softDelete, update };
+export default { getAll, getMine, add, softDelete, update };

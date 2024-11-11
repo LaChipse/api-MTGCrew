@@ -17,13 +17,37 @@ const decks_1 = __importDefault(require("../models/decks"));
 const mongodb_1 = require("mongodb");
 const config_1 = require("../config/config");
 const users_1 = __importDefault(require("../models/users"));
-// Récuperation des decks
-const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+// Récuperation de mes decks
+const getMine = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const userId = decodedToken.id;
-    const allDecks = yield decks_1.default.find({ userId: userId });
-    res.status(200).json(allDecks);
+    const tes = new mongodb_1.ObjectId(userId);
+    const mineDecks = yield decks_1.default.find({ userId: tes });
+    res.status(200).json(mineDecks);
+});
+// Récuperation des decks
+const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const allDecks = yield decks_1.default.aggregate([
+        {
+            $lookup: {
+                from: "users",
+                localField: "userId",
+                foreignField: "_id",
+                as: "users"
+            }
+        }
+    ]);
+    const response = allDecks.map((deck) => {
+        var _a, _b;
+        return ({
+            id: deck._id,
+            nom: deck.nom,
+            userId: deck.userId,
+            userFullName: `${(_a = deck.users[0]) === null || _a === void 0 ? void 0 : _a.prenom} ${(_b = deck.users[0]) === null || _b === void 0 ? void 0 : _b.nom.charAt(0)}.`
+        });
+    });
+    res.status(200).json(response);
 });
 // Ajout d'un deck
 const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -31,7 +55,7 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const userId = decodedToken.id;
-    yield decks_1.default.create(Object.assign(Object.assign({}, deckObject), { userId, parties: 0, victoires: 0 }))
+    yield decks_1.default.create(Object.assign(Object.assign({}, deckObject), { userId: new mongodb_1.ObjectId(userId), parties: 0, victoires: 0 }))
         .then(() => __awaiter(void 0, void 0, void 0, function* () {
         yield users_1.default.updateOne({ _id: new mongodb_1.ObjectId(userId) }, { $inc: { nbrDecks: 1 } });
         res.status(200).json('deck ajouté');
@@ -68,5 +92,5 @@ const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }))
         .catch(error => res.status(400).json({ error }));
 });
-exports.default = { getAll, add, softDelete, update };
+exports.default = { getAll, getMine, add, softDelete, update };
 //# sourceMappingURL=deck.js.map

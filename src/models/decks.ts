@@ -1,6 +1,7 @@
-import mongoose  from 'mongoose';
+import mongoose, { ObjectId }  from 'mongoose';
 
 export interface Deck {
+    _id: ObjectId,
     nom: string,
     userId: string,
     couleurs: Array<string>,

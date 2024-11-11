@@ -8,6 +8,7 @@ import { config } from '../src/config/config';
 import auth from '../src/routes/auth';
 import user from '../src/routes/user'
 import deck from '../src/routes/deck'
+import game from '../src/routes/game'
 
 // Connect to MongoDB
 const connection = mongoose.connect(config.srv_mongo as string);
@@ -28,5 +29,6 @@ app.get("/", async (req, res) => {
 app.use('/auth', auth);
 app.use('/user', user);
 app.use('/deck', deck);
+app.use('/game', game);
 
 export default app;

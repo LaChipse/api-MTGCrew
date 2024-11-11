@@ -28,7 +28,7 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const mongodb_1 = require("mongodb");
 const users_1 = __importDefault(require("../models/users"));
 const config_1 = require("../config/config");
-// Création d'un utilisateur
+// Récupération d'un utilisateur
 const getOne = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
@@ -39,6 +39,18 @@ const getOne = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const { password, _id } = userObject, restUser = __rest(userObject, ["password", "_id"]);
         res.status(200).json(Object.assign(Object.assign({}, restUser), { id: _id }));
     }
+});
+// Récupération des utilisateurs
+const all = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const allUsers = yield users_1.default.find();
+    const response = allUsers.map((user) => ({
+        id: user._id,
+        fullName: `${user.prenom} ${user.nom.charAt(0)}.`,
+        nbrDecks: user.nbrDecks,
+        partiesJouees: user.partiesJouees,
+        victoires: user.victoires
+    }));
+    res.status(200).json(response);
 });
 // Mise à jour utilisateur
 const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -61,5 +73,5 @@ const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     });
     res.status(200).json('test');
 });
-exports.default = { getOne, update };
+exports.default = { getOne, update, all };
 //# sourceMappingURL=user.js.map

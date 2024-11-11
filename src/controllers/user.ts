@@ -8,7 +8,7 @@ interface TokenPayload extends JwtPayload {
     id: string;  // Assurez-vous que l'id est bien de type string
 }
 
-// Création d'un utilisateur
+// Récupération d'un utilisateur
 const getOne = async (req, res) => {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
@@ -21,6 +21,22 @@ const getOne = async (req, res) => {
         const { password, _id, ...restUser } = userObject;
         res.status(200).json({...restUser, id: _id})
     }
+}
+
+// Récupération des utilisateurs
+const all = async (req, res) => {
+    const allUsers = await users.find()
+    const response = allUsers.map((user) => (
+        {
+            id: user._id,
+            fullName: `${user.prenom} ${user.nom.charAt(0)}.`,
+            nbrDecks: user.nbrDecks,
+            partiesJouees: user.partiesJouees,
+            victoires: user.victoires
+        }
+    ))
+
+    res.status(200).json(response)
 }
 
 // Mise à jour utilisateur
@@ -56,4 +72,4 @@ const update = async (req, res) => {
     
 }
 
-export default { getOne, update };
+export default { getOne, update, all };

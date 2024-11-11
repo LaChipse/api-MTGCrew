@@ -9,10 +9,11 @@ const auth_1 = require("../middleware/auth");
 const deck_1 = __importDefault(require("../controllers/deck"));
 const router = express.Router();
 //Routes User
-router.get('/all', auth_1.auth, deck_1.default.getAll);
+router.get('/mine', auth_1.auth, deck_1.default.getMine);
 router.post('/add', deck_1.default.add);
 router.delete('/delete', auth_1.auth, deck_1.default.softDelete);
 router.put('/update', auth_1.auth, deck_1.default.update);
+router.get('/all', deck_1.default.getAll);
 //Exportation
 exports.default = router;
 //# sourceMappingURL=deck.js.map
