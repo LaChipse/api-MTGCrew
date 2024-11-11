@@ -25,11 +25,6 @@ const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = decodedToken.id;
     const allGames = yield games_1.default.aggregate([
         {
-            $unwind: {
-                path: "$config"
-            }
-        },
-        {
             $match: {
                 "config.userId": userId
             }
@@ -44,6 +39,16 @@ const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         typeVictoire: game.typeVictoire
     }));
     res.status(200).json(response);
+});
+// Compte le nombre de parties
+const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const countGames = yield games_1.default.aggregate([
+        {
+            $count: "count"
+        }
+    ]);
+    res.status(200).json(((_a = countGames === null || countGames === void 0 ? void 0 : countGames[0]) === null || _a === void 0 ? void 0 : _a.count) || 0);
 });
 // Récuperation des parties
 const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -94,5 +99,5 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }))
         .catch(error => res.status(400).json({ error }));
 });
-exports.default = { getAll, add, history };
+exports.default = { getAll, add, history, count };
 //# sourceMappingURL=game.js.map
