@@ -15,7 +15,7 @@ const getMine = async (req, res) => {
 
     const userId = decodedToken.id;
     const tes = new ObjectId(userId)
-    const mineDecks = await decks.find({userId: tes})
+    const mineDecks = await decks.find({ userId: tes }).sort({ nom: 1 })
 
     res.status(200).json(mineDecks)
 }
@@ -30,6 +30,9 @@ const getAll = async (req, res) => {
                 foreignField: "_id",
                 as: "users"
             }
+        },
+        {
+            $sort : { nom: 1 }
         }
     ])
 
