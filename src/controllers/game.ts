@@ -1,17 +1,15 @@
-import jwt, { JwtPayload } from 'jsonwebtoken';
-import { ObjectId } from 'mongodb';
-import { config } from '../config/config';
 import { format } from 'date-fns';
+import jwt, { JwtPayload } from 'jsonwebtoken';
+import { config } from '../config/config';
 import decks from '../models/decks';
 import games, { PlayersBlock } from '../models/games';
 import users from '../models/users';
-import deck from './deck';
 
 interface TokenPayload extends JwtPayload {
     id: string;
 }
 
-// Récuperation de mes decks
+// Récuperation de l'historique de mes parties
 const history = async (req, res) => {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
@@ -22,6 +20,9 @@ const history = async (req, res) => {
             $match: {
                 "config.userId": userId
             }
+        },
+        {
+            $sort: { _id: -1 }
         }
     ])
 
@@ -52,7 +53,7 @@ const count = async (req, res) => {
 
 // Récuperation des parties
 const getAll = async (req, res) => {
-    const allGames = await games.find()
+    const allGames = await games.find().sort({ _id: -1 })
 
     const response = allGames.map((game) => (
         {

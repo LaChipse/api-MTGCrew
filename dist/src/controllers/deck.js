@@ -23,7 +23,7 @@ const getMine = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const userId = decodedToken.id;
     const tes = new mongodb_1.ObjectId(userId);
-    const mineDecks = yield decks_1.default.find({ userId: tes });
+    const mineDecks = yield decks_1.default.find({ userId: tes }).sort({ nom: 1 });
     res.status(200).json(mineDecks);
 });
 // Récuperation des decks
@@ -36,6 +36,9 @@ const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 foreignField: "_id",
                 as: "users"
             }
+        },
+        {
+            $sort: { nom: 1 }
         }
     ]);
     const response = allDecks.map((deck) => {

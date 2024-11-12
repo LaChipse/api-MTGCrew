@@ -25,7 +25,7 @@ const getOne = async (req, res) => {
 
 // Récupération des utilisateurs
 const all = async (req, res) => {
-    const allUsers = await users.find()
+    const allUsers = await users.find().sort({ prenom: 1 })
     const response = allUsers.map((user) => (
         {
             id: user._id,
