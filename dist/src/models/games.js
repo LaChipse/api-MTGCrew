@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importDefault(require("mongoose"));
 const gamesSchema = new mongoose_1.default.Schema({
-    date: String,
+    date: Date,
     type: String,
     config: (Array),
     victoire: String,

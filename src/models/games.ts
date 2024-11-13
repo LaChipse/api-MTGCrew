@@ -11,7 +11,7 @@ export interface PlayersBlock {
 
 export interface Game {
     _id: ObjectId,
-    date?: string,
+    date?: Date,
     type: string,
     config: Array<PlayersBlock>,
     victoire: string, 
@@ -19,7 +19,7 @@ export interface Game {
 }
 
 const gamesSchema = new mongoose.Schema({
-    date: String,
+    date: Date,
     type: String,
     config: Array<PlayersBlock>,
     victoire: String, 

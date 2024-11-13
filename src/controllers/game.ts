@@ -22,7 +22,7 @@ const history = async (req, res) => {
             }
         },
         {
-            $sort: { _id: -1 }
+            $sort: { date: -1 }
         }
     ])
 
@@ -53,7 +53,7 @@ const count = async (req, res) => {
 
 // Récuperation des parties
 const getAll = async (req, res) => {
-    const allGames = await games.find().sort({ _id: -1 })
+    const allGames = await games.find().sort({ date: -1 })
 
     const response = allGames.map((game) => (
         {
@@ -75,14 +75,13 @@ const add = async (req, res) => {
     let decksWinners: Array<string> = []
 
     const gameObject = req.body;
-    const { date, type, config: configGame, victoire } = gameObject
+    const { type, config: configGame, victoire } = gameObject
 
     const tricheryRolVictory = (role: string) => {
         if (victoire === 'Seigneur') return role === victoire|| role === 'Gardien'
         return role === victoire
     }
 
-    const formatDate = date ? format(date, 'dd/MM/yyyy') : ''
     const usersPlayer = [...new Set(configGame.map((conf: PlayersBlock) => conf.userId))]
     const deckPlayer = [...new Set(configGame.map((conf: PlayersBlock) => conf.deckId))]
 
@@ -97,7 +96,7 @@ const add = async (req, res) => {
         decksWinners = configGame.filter((conf: PlayersBlock) => tricheryRolVictory(conf.role)).map((winner: PlayersBlock) => winner.deckId)
     }
 
-    await games.create({...gameObject, date: formatDate})
+    await games.create({...gameObject})
         .then(async () => { 
             await users.updateMany(
                 { _id: { $in: [...new Set(usersPlayer)] }},

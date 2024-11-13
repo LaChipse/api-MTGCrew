@@ -14,11 +14,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = require("../config/config");
-const date_fns_1 = require("date-fns");
 const decks_1 = __importDefault(require("../models/decks"));
 const games_1 = __importDefault(require("../models/games"));
 const users_1 = __importDefault(require("../models/users"));
-// Récuperation de mes decks
+// Récuperation de l'historique de mes parties
 const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
@@ -28,6 +27,9 @@ const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             $match: {
                 "config.userId": userId
             }
+        },
+        {
+            $sort: { date: -1 }
         }
     ]);
     const response = allGames.map((game) => ({
@@ -52,7 +54,7 @@ const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 // Récuperation des parties
 const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const allGames = yield games_1.default.find();
+    const allGames = yield games_1.default.find().sort({ date: -1 });
     const response = allGames.map((game) => ({
         id: game._id,
         date: game.date,
@@ -68,13 +70,12 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     let winners = [];
     let decksWinners = [];
     const gameObject = req.body;
-    const { date, type, config: configGame, victoire } = gameObject;
+    const { type, config: configGame, victoire } = gameObject;
     const tricheryRolVictory = (role) => {
         if (victoire === 'Seigneur')
             return role === victoire || role === 'Gardien';
         return role === victoire;
     };
-    const formatDate = date ? (0, date_fns_1.format)(date, 'dd/MM/yyyy') : '';
     const usersPlayer = [...new Set(configGame.map((conf) => conf.userId))];
     const deckPlayer = [...new Set(configGame.map((conf) => conf.deckId))];
     if (type === 'each') {
@@ -89,7 +90,7 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         winners = configGame.filter((conf) => tricheryRolVictory(conf.role)).map((winner) => winner.userId);
         decksWinners = configGame.filter((conf) => tricheryRolVictory(conf.role)).map((winner) => winner.deckId);
     }
-    yield games_1.default.create(Object.assign(Object.assign({}, gameObject), { date: formatDate }))
+    yield games_1.default.create(Object.assign({}, gameObject))
         .then(() => __awaiter(void 0, void 0, void 0, function* () {
         yield users_1.default.updateMany({ _id: { $in: [...new Set(usersPlayer)] } }, { $inc: { partiesJouees: 1 } });
         yield users_1.default.updateMany({ _id: { $in: [...new Set(winners)] } }, { $inc: { victoires: 1 } });

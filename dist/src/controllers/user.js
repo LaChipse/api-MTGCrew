@@ -42,7 +42,7 @@ const getOne = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 // Récupération des utilisateurs
 const all = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const allUsers = yield users_1.default.find();
+    const allUsers = yield users_1.default.find().sort({ prenom: 1 });
     const response = allUsers.map((user) => ({
         id: user._id,
         fullName: `${user.prenom} ${user.nom.charAt(0)}.`,
