@@ -23,7 +23,8 @@ const history = async (req, res) => {
         },
         {
             $sort: { date: -1 }
-        }
+        },
+        { $limit : 10 }
     ])
 
     const response = allGames.map((game) => (
@@ -53,7 +54,7 @@ const count = async (req, res) => {
 
 // Récuperation des parties
 const getAll = async (req, res) => {
-    const allGames = await games.find().sort({ date: -1 })
+    const allGames = await games.find().sort({ date: -1 }).limit(100)
 
     const response = allGames.map((game) => (
         {
