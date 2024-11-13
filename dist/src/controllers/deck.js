@@ -28,28 +28,12 @@ const getMine = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 // Récuperation des decks
 const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const allDecks = yield decks_1.default.aggregate([
-        {
-            $lookup: {
-                from: "users",
-                localField: "userId",
-                foreignField: "_id",
-                as: "users"
-            }
-        },
-        {
-            $sort: { nom: 1 }
-        }
-    ]);
-    const response = allDecks.map((deck) => {
-        var _a, _b;
-        return ({
-            id: deck._id,
-            nom: deck.nom,
-            userId: deck.userId,
-            userFullName: `${(_a = deck.users[0]) === null || _a === void 0 ? void 0 : _a.prenom} ${(_b = deck.users[0]) === null || _b === void 0 ? void 0 : _b.nom.charAt(0)}.`
-        });
-    });
+    const allDecks = yield decks_1.default.find().sort({ nom: 1 });
+    const response = allDecks.map((deck) => ({
+        id: deck._id,
+        nom: deck.nom,
+        userId: deck.userId,
+    }));
     res.status(200).json(response);
 });
 // Ajout d'un deck

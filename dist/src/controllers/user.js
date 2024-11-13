@@ -52,6 +52,27 @@ const all = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }));
     res.status(200).json(response);
 });
+//Récupere les utilisateurs et leurs decks
+const getUsersWithDecks = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const allUsers = yield users_1.default.aggregate([
+        { $addFields: { userId: { $toString: "$_id" } } },
+        { $lookup: {
+                from: "decks",
+                localField: "userId",
+                foreignField: "userId",
+                as: "decks"
+            } },
+        { $project: {
+                _id: 1,
+                decks: 1
+            } }
+    ]);
+    const response = allUsers.map((user) => ({
+        id: user._id,
+        decks: user.decks
+    }));
+    res.status(200).json(response);
+});
 // Mise à jour utilisateur
 const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
@@ -71,7 +92,7 @@ const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         $set: Object.assign({ nom,
             prenom }, getPassword())
     });
-    res.status(200).json('test');
+    res.status(200).json({ nom, prenom });
 });
-exports.default = { getOne, update, all };
+exports.default = { getOne, update, all, getUsersWithDecks };
 //# sourceMappingURL=user.js.map

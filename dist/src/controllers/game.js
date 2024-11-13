@@ -30,7 +30,8 @@ const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         },
         {
             $sort: { date: -1 }
-        }
+        },
+        { $limit: 10 }
     ]);
     const response = allGames.map((game) => ({
         id: game._id,
@@ -54,7 +55,7 @@ const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 // Récuperation des parties
 const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const allGames = yield games_1.default.find().sort({ date: -1 });
+    const allGames = yield games_1.default.find().sort({ date: -1 }).limit(100);
     const response = allGames.map((game) => ({
         id: game._id,
         date: game.date,

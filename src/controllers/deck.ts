@@ -22,26 +22,13 @@ const getMine = async (req, res) => {
 
 // Récuperation des decks
 const getAll = async (req, res) => {
-    const allDecks = await decks.aggregate<Deck & { users: Array<User> }>([
-        {
-            $lookup: {
-                from: "users",
-                localField: "userId",
-                foreignField: "_id",
-                as: "users"
-            }
-        },
-        {
-            $sort : { nom: 1 }
-        }
-    ])
+    const allDecks = await decks.find().sort({ nom: 1 })
 
     const response = allDecks.map((deck) => (
         {
             id: deck._id,
             nom: deck.nom,
             userId: deck.userId,
-            userFullName: `${deck.users[0]?.prenom} ${deck.users[0]?.nom.charAt(0)}.`
         }
     ))
 

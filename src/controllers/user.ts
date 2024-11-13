@@ -39,6 +39,32 @@ const all = async (req, res) => {
     res.status(200).json(response)
 }
 
+//Récupere les utilisateurs et leurs decks
+const getUsersWithDecks = async (req, res) => {
+    const allUsers = await users.aggregate([
+        { $addFields: { userId: { $toString: "$_id" }}},
+        { $lookup: {
+            from: "decks",
+            localField: "userId",
+            foreignField: "userId",
+            as: "decks"
+        }},
+        { $project: {
+            _id: 1,
+            decks: 1
+        }}
+    ])
+
+    const response = allUsers.map((user) => (
+        {
+            id: user._id,
+            decks: user.decks
+        }
+    ))
+
+    res.status(200).json(response)
+}
+
 // Mise à jour utilisateur
 const update = async (req, res) => {
     const token = req.headers.authorization.split(' ')[1];
@@ -67,9 +93,9 @@ const update = async (req, res) => {
         }
     );
 
-    res.status(200).json('test')
+    res.status(200).json({ nom, prenom })
 
     
 }
 
-export default { getOne, update, all };
+export default { getOne, update, all, getUsersWithDecks };

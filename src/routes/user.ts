@@ -9,6 +9,7 @@ const router = express.Router();
 router.get('', auth, userCtrl.getOne);
 router.put('/update', auth, userCtrl.update);
 router.get('/all', userCtrl.all);
+router.get('/usersDecks', userCtrl.getUsersWithDecks)
 
 //Exportation
 export default router;
