@@ -16,10 +16,12 @@ const getOne = async (req, res) => {
     const userId = decodedToken.id;
     const user = await users.findById(userId)
 
+    if (!user) res.status(401).json({ error: 'Requête non authentifiée !'})
+
     if (user) {
         const userObject = user.toObject();
-        const { password, _id, ...restUser } = userObject;
-        res.status(200).json({...restUser, id: _id})
+        const { password, ...restUser } = userObject;
+        res.status(200).json(restUser)
     }
 }
 

@@ -34,10 +34,12 @@ const getOne = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const userId = decodedToken.id;
     const user = yield users_1.default.findById(userId);
+    if (!user)
+        res.status(401).json({ error: 'Requête non authentifiée !' });
     if (user) {
         const userObject = user.toObject();
         const { password, _id } = userObject, restUser = __rest(userObject, ["password", "_id"]);
-        res.status(200).json(Object.assign(Object.assign({}, restUser), { id: _id }));
+        res.status(200).json({ user: restUser, id: _id });
     }
 });
 // Récupération des utilisateurs

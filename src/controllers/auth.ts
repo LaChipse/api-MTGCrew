@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 
 import bcrypt from 'bcrypt';
 import users from '../models/users';
+import moment from 'moment';
 
 //Création d'un utilisateur
 const signup = async (req, res) => {
@@ -30,6 +31,15 @@ const login = async (req, res) => {
 
     if (!user) {
         return res.status(404).json('Utilisateur non trouvé !');
+    }  
+
+    const restUser = {
+        _id: user._id,
+        nom: user.nom,
+        prenom: user.prenom,
+        nbrDecks: user.nbrDecks,
+        partiesJouees: user.partiesJouees,
+        victoires: user.victoires
     }
 
     bcrypt.compare(userObject.password, user.password)
@@ -37,15 +47,8 @@ const login = async (req, res) => {
             if (!valid) {
                 return res.status(403).json('Mot de passe incorrect !');
             }
-            return res.status(200).json({ userId: user.id, token: jwt.sign({ id: user.id }, 'shhhhh', { expiresIn: '24h' }) });
+            return res.status(200).json({ user: restUser, token: jwt.sign({ id: user.id }, 'shhhhh', { expiresIn: '1h' }) });
         })
 };
 
-
-//Teste
-const test = async (req, res) => {
-    res.send("Express on Vercel");
-};
-
-
-export default { signup, login, test };
+export default { signup, login };

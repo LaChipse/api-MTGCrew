@@ -44,12 +44,8 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!valid) {
             return res.status(403).json('Mot de passe incorrect !');
         }
-        return res.status(200).json({ userId: user.id, token: jwt.sign({ id: user.id }, 'shhhhh', { expiresIn: '24h' }) });
+        return res.status(200).json({ user: user, token: jwt.sign({ id: user.id }, 'shhhhh', { expiresIn: '1h' }) });
     });
 });
-//Teste
-const test = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.send("Express on Vercel");
-});
-exports.default = { signup, login, test };
+exports.default = { signup, login };
 //# sourceMappingURL=auth.js.map
