@@ -26,7 +26,6 @@ const connection = mongoose_1.default.connect(config_1.config.srv_mongo);
 const app = express();
 // Middleware pour gérer les requêtes en JSON
 app.use(express.json());
-// Servir les fichiers statiques du dossier 'dist'
 app.use(express.static(path.join('/', 'dist')));
 app.use(express.urlencoded({ extended: false }));
 app.use(cors());

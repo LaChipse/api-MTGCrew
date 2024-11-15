@@ -6,12 +6,12 @@ import users from '../models/users';
 //Création d'un utilisateur
 const signup = async (req, res) => {
     const userObject = req.body;
+    if(!userObject.nom || !userObject.prenom || !userObject.password) res.status(403).json('Champ manquant !')
+        
     const user = await users.findOne({ nom: userObject.nom, prenom: userObject.prenom })
-    
     if (user) {
         res.status(401).json('Cet utilisateur est déjà enregistré !')
-    }
-    else {
+    } else {
         bcrypt.hash(userObject.password, 10)
             .then((hash) => {
                 users.create({...userObject, password: hash, nbrDecks: 0, partiesJouees: 0, victoires: 0})

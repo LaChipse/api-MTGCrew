@@ -57,8 +57,6 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
         const userObject = user.toObject();
         const { password } = userObject, restUser = __rest(userObject, ["password"]);
-        res.status(200).json(restUser);
-        console.log(restUser);
         return res.status(200).json({ user: restUser, token: jwt.sign({ id: user.id }, 'shhhhh') });
     });
 });
