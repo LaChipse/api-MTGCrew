@@ -2,11 +2,9 @@ const jwt = require('jsonwebtoken');
 
 import bcrypt from 'bcrypt';
 import users from '../models/users';
-import moment from 'moment';
 
 //Création d'un utilisateur
 const signup = async (req, res) => {
-
     const userObject = req.body;
     const user = await users.findOne({ nom: userObject.nom, prenom: userObject.prenom })
     

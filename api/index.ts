@@ -17,15 +17,14 @@ const app = express();
 
 // Middleware pour gérer les requêtes en JSON
 app.use(express.json());
-// Servir les fichiers statiques du dossier 'dist'
 app.use(express.static(path.join('/', 'dist')));
 app.use(express.urlencoded({ extended: false }));
-
 app.use(cors());
 
 app.get("/", async (req, res) => {
     res.status(200).send(`Connexion réussie à MongoDB: ${(await connection).Connection.name}`);
 });
+
 app.use('/auth', auth);
 app.use('/user', user);
 app.use('/deck', deck);

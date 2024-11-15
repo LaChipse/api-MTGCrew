@@ -96,8 +96,6 @@ const update = async (req, res) => {
     );
 
     res.status(200).json({ nom, prenom })
-
-    
 }
 
 export default { getOne, update, all, getUsersWithDecks };
