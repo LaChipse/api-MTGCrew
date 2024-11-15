@@ -38,8 +38,8 @@ const getOne = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         res.status(401).json({ error: 'Requête non authentifiée !' });
     if (user) {
         const userObject = user.toObject();
-        const { password, _id } = userObject, restUser = __rest(userObject, ["password", "_id"]);
-        res.status(200).json({ user: restUser, id: _id });
+        const { password } = userObject, restUser = __rest(userObject, ["password"]);
+        res.status(200).json(restUser);
     }
 });
 // Récupération des utilisateurs
