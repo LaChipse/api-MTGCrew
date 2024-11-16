@@ -20,8 +20,8 @@ const getOne = async (req, res) => {
 
     if (user) {
         const userObject = user.toObject();
-        const { password, ...restUser } = userObject;
-        res.status(200).json(restUser)
+        const { password, _id, ...restUser } = userObject;
+        res.status(200).json({ ...restUser, id: _id })
     }
 }
 
@@ -41,7 +41,7 @@ const all = async (req, res) => {
     res.status(200).json(response)
 }
 
-//Récupere les utilisateurs et leurs decks
+//Récupere des utilisateurs et de leurs decks
 const getUsersWithDecks = async (req, res) => {
     const allUsers = await users.aggregate([
         { $addFields: { userId: { $toString: "$_id" }}},
@@ -71,26 +71,31 @@ const getUsersWithDecks = async (req, res) => {
 const update = async (req, res) => {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
+    const userId = decodedToken.id;
 
     const { nom, prenom, password } = req.body
 
-    const getPassword = () => {
-        if (!password) return {}
+    if (password) {
         bcrypt.hash(password, 10)
-            .then((hash) => ({
-                    password: hash
-                }))
-            .catch(error => res.status(500).json({ error }));
+        .then(async (hash) => {
+            await users.updateOne(
+                { _id: new ObjectId(userId) },
+                {
+                    $set: {
+                        password: hash
+                    }
+                }
+            );
+        })
+        .catch(error => res.status(500).json({ error }));
     }
 
-    const userId = decodedToken.id;
     await users.updateOne(
         { _id: new ObjectId(userId) },
         {
             $set: {
                 nom,
                 prenom,
-                ...getPassword()
             }
         }
     );

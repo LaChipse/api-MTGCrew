@@ -14,10 +14,19 @@ const getMine = async (req, res) => {
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
 
     const userId = decodedToken.id;
-    const tes = new ObjectId(userId)
-    const mineDecks = await decks.find({ userId: tes }).sort({ nom: 1 })
+    const objectUserId = new ObjectId(userId)
+    const mineDecks = await decks.find({ userId: objectUserId }).sort({ nom: 1 })
 
     res.status(200).json(mineDecks)
+}
+
+// Récuperation des decks d'un joueur
+const getUserDeck = async (req, res) => {
+    const userId = req.params.id as string;
+    const objectUserId = new ObjectId(userId)
+    const userDecks = await decks.find({ userId: objectUserId }).sort({ nom: 1 })
+
+    res.status(200).json(userDecks)
 }
 
 // Récuperation des decks
@@ -97,4 +106,4 @@ const update = async (req, res) => {
         .catch(error => res.status(400).json({ error }));
 }
 
-export default { getAll, getMine, add, softDelete, update };
+export default { getAll, getMine, add, softDelete, update, getUserDeck };

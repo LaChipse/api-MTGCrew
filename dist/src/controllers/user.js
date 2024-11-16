@@ -38,8 +38,8 @@ const getOne = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         res.status(401).json({ error: 'Requête non authentifiée !' });
     if (user) {
         const userObject = user.toObject();
-        const { password } = userObject, restUser = __rest(userObject, ["password"]);
-        res.status(200).json(restUser);
+        const { password, _id } = userObject, restUser = __rest(userObject, ["password", "_id"]);
+        res.status(200).json(Object.assign(Object.assign({}, restUser), { id: _id }));
     }
 });
 // Récupération des utilisateurs
@@ -54,7 +54,7 @@ const all = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }));
     res.status(200).json(response);
 });
-//Récupere les utilisateurs et leurs decks
+//Récupere des utilisateurs et de leurs decks
 const getUsersWithDecks = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const allUsers = yield users_1.default.aggregate([
         { $addFields: { userId: { $toString: "$_id" } } },
@@ -79,20 +79,24 @@ const getUsersWithDecks = (req, res) => __awaiter(void 0, void 0, void 0, functi
 const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
+    const userId = decodedToken.id;
     const { nom, prenom, password } = req.body;
-    const getPassword = () => {
-        if (!password)
-            return {};
+    if (password) {
         bcrypt_1.default.hash(password, 10)
-            .then((hash) => ({
-            password: hash
+            .then((hash) => __awaiter(void 0, void 0, void 0, function* () {
+            yield users_1.default.updateOne({ _id: new mongodb_1.ObjectId(userId) }, {
+                $set: {
+                    password: hash
+                }
+            });
         }))
             .catch(error => res.status(500).json({ error }));
-    };
-    const userId = decodedToken.id;
+    }
     yield users_1.default.updateOne({ _id: new mongodb_1.ObjectId(userId) }, {
-        $set: Object.assign({ nom,
-            prenom }, getPassword())
+        $set: {
+            nom,
+            prenom,
+        }
     });
     res.status(200).json({ nom, prenom });
 });

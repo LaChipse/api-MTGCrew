@@ -22,9 +22,17 @@ const getMine = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const userId = decodedToken.id;
-    const tes = new mongodb_1.ObjectId(userId);
-    const mineDecks = yield decks_1.default.find({ userId: tes }).sort({ nom: 1 });
+    const objectUserId = new mongodb_1.ObjectId(userId);
+    const mineDecks = yield decks_1.default.find({ userId: objectUserId }).sort({ nom: 1 });
     res.status(200).json(mineDecks);
+});
+// Récuperation des decks d'un joueur
+const getUserDeck = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log(req.params.id);
+    const userId = req.params.id;
+    const objectUserId = new mongodb_1.ObjectId(userId);
+    const userDecks = yield decks_1.default.find({ userId: objectUserId }).sort({ nom: 1 });
+    res.status(200).json(userDecks);
 });
 // Récuperation des decks
 const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -79,5 +87,5 @@ const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }))
         .catch(error => res.status(400).json({ error }));
 });
-exports.default = { getAll, getMine, add, softDelete, update };
+exports.default = { getAll, getMine, add, softDelete, update, getUserDeck };
 //# sourceMappingURL=deck.js.map

@@ -13,8 +13,8 @@ const signup = async (req, res) => {
         res.status(401).json('Cet utilisateur est déjà enregistré !')
     } else {
         bcrypt.hash(userObject.password, 10)
-            .then((hash) => {
-                users.create({...userObject, password: hash, nbrDecks: 0, partiesJouees: 0, victoires: 0})
+            .then(async (hash) => {
+                await users.create({...userObject, password: hash, nbrDecks: 0, partiesJouees: 0, victoires: 0})
                     .then(() => { res.status(201).send('Profil enregistré !') })
                     .catch(error => res.status(400).json({ error }));
             })
@@ -36,9 +36,8 @@ const login = async (req, res) => {
             if (!valid) {
                 return res.status(403).json('Mot de passe incorrect !');
             }
-            const userObject = user.toObject();
-            const { password, ...restUser } = userObject;
-            return res.status(200).json({ user: restUser, token: jwt.sign({ id: user.id }, 'shhhhh') });
+            const { password, _id, ...restUser } = user.toObject();
+            return res.status(200).json({ user: { ...restUser, id: _id }, token: jwt.sign({ id: user.id }, 'shhhhh') });
         })
 };
 

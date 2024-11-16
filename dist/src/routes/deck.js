@@ -14,6 +14,7 @@ router.post('/add', deck_1.default.add);
 router.delete('/delete', auth_1.auth, deck_1.default.softDelete);
 router.put('/update', auth_1.auth, deck_1.default.update);
 router.get('/all', deck_1.default.getAll);
+router.get('/:id', deck_1.default.getUserDeck);
 //Exportation
 exports.default = router;
 //# sourceMappingURL=deck.js.map

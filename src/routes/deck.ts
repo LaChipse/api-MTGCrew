@@ -11,6 +11,7 @@ router.post('/add', deckCtrl.add);
 router.delete('/delete', auth, deckCtrl.softDelete);
 router.put('/update', auth, deckCtrl.update);
 router.get('/all', deckCtrl.getAll);
+router.get('/:id', deckCtrl.getUserDeck);
 
 //Exportation
 export default router;
