@@ -28,7 +28,6 @@ const getMine = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 // Récuperation des decks d'un joueur
 const getUserDeck = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log(req.params.id);
     const userId = req.params.id;
     const objectUserId = new mongodb_1.ObjectId(userId);
     const userDecks = yield decks_1.default.find({ userId: objectUserId }).sort({ nom: 1 });
