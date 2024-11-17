@@ -47,6 +47,7 @@ const getAll = async (req, res) => {
 // Ajout d'un deck
 const add = async (req, res) => {
     const deckObject = req.body;
+    
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
 
@@ -88,6 +89,7 @@ const softDelete = async (req, res) => {
 // Modification d'un deck
 const update = async (req, res) => {
     const deckObject = req.body;
+
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
 

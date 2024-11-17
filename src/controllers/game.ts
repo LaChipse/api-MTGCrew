@@ -79,7 +79,7 @@ const add = async (req, res) => {
     const { type, config: configGame, victoire } = gameObject
 
     const tricheryRolVictory = (role: string) => {
-        if (victoire === 'Seigneur') return role === victoire|| role === 'Gardien'
+        if (victoire === 'Seigneur') return role === victoire || role === 'Gardien'
         return role === victoire
     }
 
