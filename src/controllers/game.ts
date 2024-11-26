@@ -18,7 +18,8 @@ const history = async (req, res) => {
     const allGames = await games.aggregate([
         {
             $match: {
-                "config.userId": userId
+                "config.userId": userId,
+                isStandard: req.params.type === 'true'
             }
         },
         {
@@ -45,6 +46,11 @@ const history = async (req, res) => {
 const count = async (req, res) => {
     const countGames = await games.aggregate([
         {
+            $match: {
+                isStandard: req.params.type === 'true'
+            }
+        },
+        {
             $count:"count"
         }
     ])
@@ -54,7 +60,7 @@ const count = async (req, res) => {
 
 // Récuperation des parties
 const getAll = async (req, res) => {
-    const allGames = await games.find().sort({ date: -1 }).limit(100)
+    const allGames = await games.find({ isStandard: req.params.type === 'true' }).sort({ date: -1 }).limit(100)
 
     const response = allGames.map((game) => (
         {
@@ -72,11 +78,14 @@ const getAll = async (req, res) => {
 
 // Ajout d'une partie
 const add = async (req, res) => {
-    let winners: Array<string> = []
-    let decksWinners: Array<string> = []
+    let winnersSpecial: Array<string> = []
+    let winnersStandard: Array<string> = []
+
+    let decksWinnersSpecial: Array<string> = []
+    let decksWinnersStandard: Array<string> = []
 
     const gameObject = req.body;
-    const { type, config: configGame, victoire } = gameObject
+    const { type, config: configGame, victoire, isStandard } = gameObject
 
     const tricheryRolVictory = (role: string) => {
         if (victoire === 'Seigneur') return role === victoire || role === 'Gardien'
@@ -86,42 +95,75 @@ const add = async (req, res) => {
     const usersPlayer = [...new Set(configGame.map((conf: PlayersBlock) => conf.userId))]
     const deckPlayer = [...new Set(configGame.map((conf: PlayersBlock) => conf.deckId))]
 
-    if (type === 'each') {
-        winners = [victoire]
-        decksWinners = configGame.filter((conf: PlayersBlock) => conf.userId === victoire).map((winner: PlayersBlock) => winner.deckId)
-    } else if (type === 'team') {
-        winners = configGame.filter((conf: PlayersBlock) => conf.team === victoire).map((winner: PlayersBlock) => winner.userId)
-        decksWinners = configGame.filter((conf: PlayersBlock) => conf.team === victoire).map((winner: PlayersBlock) => winner.deckId)
-    } else if (type === 'treachery') {
-        winners = configGame.filter((conf: PlayersBlock) => tricheryRolVictory(conf.role)).map((winner: PlayersBlock) => winner.userId)
-        decksWinners = configGame.filter((conf: PlayersBlock) => tricheryRolVictory(conf.role)).map((winner: PlayersBlock) => winner.deckId)
-    }
+    if (isStandard) {
+        if (type === 'each') {
+            winnersStandard = [victoire]
+            decksWinnersStandard = configGame.filter((conf: PlayersBlock) => conf.userId === victoire).map((winner: PlayersBlock) => winner.deckId)
+        } else if (type === 'team') {
+            winnersStandard = configGame.filter((conf: PlayersBlock) => conf.team === victoire).map((winner: PlayersBlock) => winner.userId)
+            decksWinnersStandard = configGame.filter((conf: PlayersBlock) => conf.team === victoire).map((winner: PlayersBlock) => winner.deckId)
+        }
 
-    await games.create({...gameObject})
+        await games.create({...gameObject})
         .then(async () => { 
             await users.updateMany(
                 { _id: { $in: [...new Set(usersPlayer)] }},
-                { $inc: { partiesJouees: 1 } }
+                { $inc: { 'partiesJouees.standard': 1 } }
             );
 
             await users.updateMany(
-                { _id: { $in: [...new Set(winners)] }},
-                { $inc: { victoires: 1 } }
+                { _id: { $in: [...new Set(winnersStandard)] }},
+                { $inc: { 'victoires.standard': 1 } }
             );
 
             await decks.updateMany(
                 { _id: { $in: [...new Set(deckPlayer)] }},
-                { $inc: { parties: 1 } }
+                { $inc: { 'parties.standard': 1 } }
             );
 
             await decks.updateMany(
-                { _id: { $in: [...new Set(decksWinners)] }},
-                { $inc: { victoires: 1 } }
+                { _id: { $in: [...new Set(decksWinnersStandard)] }},
+                { $inc: { 'victoires.standard': 1 } }
             );
             
             res.status(200).json({ config: configGame, victoire })
         })
         .catch(error => res.status(400).json({ error }));
+    } else {
+        if (type === 'treachery') {
+            winnersSpecial = configGame.filter((conf: PlayersBlock) => tricheryRolVictory(conf.role)).map((winner: PlayersBlock) => winner.userId)
+            decksWinnersSpecial = configGame.filter((conf: PlayersBlock) => tricheryRolVictory(conf.role)).map((winner: PlayersBlock) => winner.deckId)
+        } else if (type === 'archenemy') {
+            winnersSpecial = configGame.filter((conf: PlayersBlock) => conf.role === victoire).map((winner: PlayersBlock) => winner.userId)
+            decksWinnersSpecial = configGame.filter((conf: PlayersBlock) => conf.role === victoire).map((winner: PlayersBlock) => winner.deckId)
+        }
+
+        await games.create({...gameObject})
+        .then(async () => { 
+            await users.updateMany(
+                { _id: { $in: [...new Set(usersPlayer)] }},
+                { $inc: { 'partiesJouees.special': 1 } }
+            );
+
+            await users.updateMany(
+                { _id: { $in: [...new Set(winnersSpecial)] }},
+                { $inc: { 'victoires.special': 1 } }
+            );
+
+            await decks.updateMany(
+                { _id: { $in: [...new Set(deckPlayer)] }},
+                { $inc: { 'parties.special': 1 } }
+            );
+
+            await decks.updateMany(
+                { _id: { $in: [...new Set(decksWinnersSpecial)] }},
+                { $inc: { 'victoires.special': 1 } }
+            );
+            
+            res.status(200).json({ config: configGame, victoire })
+        })
+        .catch(error => res.status(400).json({ error }));
+    }
 }
 
 export default { getAll, add, history, count };

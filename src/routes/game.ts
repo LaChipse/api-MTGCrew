@@ -6,9 +6,9 @@ const router = express.Router();
 
 //Routes User
 router.post('/add', gameCtrl.add);
-router.get('/all', gameCtrl.getAll);
-router.get('/history', gameCtrl.history);
-router.get('/count', gameCtrl.count);
+router.get('/all/:type', gameCtrl.getAll);
+router.get('/history/:type', gameCtrl.history);
+router.get('/count/:type', gameCtrl.count);
 
 //Exportation
 export default router;

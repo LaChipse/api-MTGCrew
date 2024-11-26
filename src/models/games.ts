@@ -6,7 +6,7 @@ export interface PlayersBlock {
     deck?: string,
     deckId?: string,
     team?: string,
-    role?: string
+    role?: string,
 }   
 
 export interface Game {
@@ -16,6 +16,7 @@ export interface Game {
     config: Array<PlayersBlock>,
     victoire: string, 
     typeVictoire: string
+    isStandard: Boolean
 }
 
 const gamesSchema = new mongoose.Schema({
@@ -23,7 +24,8 @@ const gamesSchema = new mongoose.Schema({
     type: String,
     config: Array<PlayersBlock>,
     victoire: String, 
-    typeVictoire: String
+    typeVictoire: String,
+    isStandard: Boolean
 });
 
 const games = mongoose.model('games', gamesSchema);

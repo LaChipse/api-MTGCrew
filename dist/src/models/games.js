@@ -9,7 +9,8 @@ const gamesSchema = new mongoose_1.default.Schema({
     type: String,
     config: (Array),
     victoire: String,
-    typeVictoire: String
+    typeVictoire: String,
+    isStandard: Boolean
 });
 const games = mongoose_1.default.model('games', gamesSchema);
 exports.default = games;

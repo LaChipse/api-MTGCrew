@@ -1,4 +1,5 @@
 import mongoose, { ObjectId }  from 'mongoose';
+import { partiesTypes, PartiesTypes } from './decks';
 
 export interface User {
     _id: ObjectId
@@ -6,8 +7,8 @@ export interface User {
     prenom: string,
     password: string
     nbrDecks: number,
-    partiesJouees: number,
-    victoires: number
+    partiesJouees: PartiesTypes,
+    victoires: PartiesTypes
 }
 
 const usersSchema = new mongoose.Schema({
@@ -15,8 +16,8 @@ const usersSchema = new mongoose.Schema({
     prenom: String,
     password: String,
     nbrDecks: Number,
-    partiesJouees: Number,
-    victoires: Number
+    partiesJouees: partiesTypes,
+    victoires: partiesTypes
 });
 
 const users = mongoose.model('users', usersSchema);
