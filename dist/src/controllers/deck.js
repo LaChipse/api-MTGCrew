@@ -49,7 +49,7 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const userId = decodedToken.id;
-    yield decks_1.default.create(Object.assign(Object.assign({}, deckObject), { userId: new mongodb_1.ObjectId(userId), parties: 0, victoires: 0 }))
+    yield decks_1.default.create(Object.assign(Object.assign({}, deckObject), { userId: new mongodb_1.ObjectId(userId), parties: { standard: 0, special: 0 }, victoires: { standard: 0, special: 0 } }))
         .then(() => __awaiter(void 0, void 0, void 0, function* () {
         yield users_1.default.updateOne({ _id: new mongodb_1.ObjectId(userId) }, { $inc: { nbrDecks: 1 } });
         res.status(200).json('deck ajouté');
