@@ -9,8 +9,8 @@ const game_1 = __importDefault(require("../controllers/game"));
 const router = express.Router();
 //Routes User
 router.post('/add', game_1.default.add);
-router.get('/all/:type', game_1.default.getAll);
-router.get('/history/:type', game_1.default.history);
+router.get('/all/:type/:page', game_1.default.getAll);
+router.get('/history/:type/:page', game_1.default.history);
 router.get('/count/:type', game_1.default.count);
 //Exportation
 exports.default = router;

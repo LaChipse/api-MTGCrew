@@ -21,6 +21,7 @@ const users_1 = __importDefault(require("../models/users"));
 const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
+    const page = req.params.page;
     const userId = decodedToken.id;
     const allGames = yield games_1.default.aggregate([
         {
@@ -29,9 +30,8 @@ const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 isStandard: req.params.type === 'true'
             }
         },
-        {
-            $sort: { date: -1 }
-        },
+        { $sort: { date: -1 } },
+        { $skip: 10 * (page - 1) },
         { $limit: 10 }
     ]);
     const response = allGames.map((game) => ({
@@ -61,7 +61,8 @@ const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 // Récuperation des parties
 const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const allGames = yield games_1.default.find({ isStandard: req.params.type === 'true' }).sort({ date: -1 }).limit(100);
+    const page = req.params.page;
+    const allGames = yield games_1.default.find({ isStandard: req.params.type === 'true' }).sort({ date: -1 }).skip(20 * (page - 1)).limit(20);
     const response = allGames.map((game) => ({
         id: game._id,
         date: game.date,
