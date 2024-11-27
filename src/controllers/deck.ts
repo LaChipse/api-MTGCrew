@@ -52,7 +52,7 @@ const add = async (req, res) => {
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
 
     const userId = decodedToken.id;
-    await decks.create({...deckObject, userId: new ObjectId(userId), parties: 0, victoires: 0})
+    await decks.create({...deckObject, userId: new ObjectId(userId), parties: {standard: 0, special: 0}, victoires: {standard: 0, special: 0}})
         .then(async () => { 
             await users.updateOne(
                 { _id: new ObjectId(userId) },
