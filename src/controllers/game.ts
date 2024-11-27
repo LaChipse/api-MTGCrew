@@ -13,6 +13,7 @@ interface TokenPayload extends JwtPayload {
 const history = async (req, res) => {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
+    const page = req.params.page
 
     const userId = decodedToken.id;
     const allGames = await games.aggregate([
@@ -22,9 +23,8 @@ const history = async (req, res) => {
                 isStandard: req.params.type === 'true'
             }
         },
-        {
-            $sort: { date: -1 }
-        },
+        { $sort: { date: -1 } },
+        { $skip: 10 * (page - 1) },
         { $limit : 10 }
     ])
 
@@ -60,7 +60,8 @@ const count = async (req, res) => {
 
 // Récuperation des parties
 const getAll = async (req, res) => {
-    const allGames = await games.find({ isStandard: req.params.type === 'true' }).sort({ date: -1 }).limit(100)
+    const page = req.params.page
+    const allGames = await games.find({ isStandard: req.params.type === 'true' }).sort({ date: -1 }).skip(20 * (page - 1)).limit(20)
 
     const response = allGames.map((game) => (
         {
