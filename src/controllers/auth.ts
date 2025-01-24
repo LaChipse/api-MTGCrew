@@ -14,7 +14,19 @@ const signup = async (req, res) => {
     } else {
         bcrypt.hash(userObject.password, 10)
             .then(async (hash) => {
-                await users.create({...userObject, password: hash, nbrDecks: 0, partiesJouees: 0, victoires: 0})
+                await users.create({
+                    ...userObject, 
+                    password: hash, 
+                    nbrDecks: 0, 
+                    partiesJouees: {
+                        standard: 0,
+                        special: 0
+                    }, 
+                    victoires: {
+                        standard: 0,
+                        special: 0
+                    }
+                })
                     .then(() => { res.status(201).send('Profil enregistré !') })
                     .catch(error => res.status(400).json({ error }));
             })
