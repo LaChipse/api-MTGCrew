@@ -19,7 +19,7 @@ export interface Deck {
     parties: PartiesTypes,
     victoires: PartiesTypes,
     isImprime: boolean,
-    rank: string
+    rank: number
 }
 
 const decksSchema = new mongoose.Schema({
@@ -30,7 +30,7 @@ const decksSchema = new mongoose.Schema({
     parties: partiesTypes,
     victoires: partiesTypes,
     isImprime: Boolean,
-    rank: String
+    rank: Number
 });
 
 const decks = mongoose.model('decks', decksSchema);

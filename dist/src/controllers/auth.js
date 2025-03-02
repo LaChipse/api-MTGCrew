@@ -38,7 +38,13 @@ const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     else {
         bcrypt_1.default.hash(userObject.password, 10)
             .then((hash) => __awaiter(void 0, void 0, void 0, function* () {
-            yield users_1.default.create(Object.assign(Object.assign({}, userObject), { password: hash, nbrDecks: 0, partiesJouees: 0, victoires: 0 }))
+            yield users_1.default.create(Object.assign(Object.assign({}, userObject), { password: hash, nbrDecks: 0, partiesJouees: {
+                    standard: 0,
+                    special: 0
+                }, victoires: {
+                    standard: 0,
+                    special: 0
+                } }))
                 .then(() => { res.status(201).send('Profil enregistré !'); })
                 .catch(error => res.status(400).json({ error }));
         }))
