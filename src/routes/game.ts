@@ -9,6 +9,7 @@ router.post('/add', gameCtrl.add);
 router.get('/all/:type/:page', gameCtrl.getAll);
 router.get('/history/:type/:page', gameCtrl.history);
 router.get('/count/:type', gameCtrl.count);
+router.get('/historyCount/:type', gameCtrl.historyCount);
 
 //Exportation
 export default router;

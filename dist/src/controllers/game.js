@@ -21,14 +21,22 @@ const users_1 = __importDefault(require("../models/users"));
 const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
-    const page = req.params.page;
+    const page = Number(req.params.page) || 1;
+    const isStandard = req.params.type === 'true';
+    const { startDate, endDate } = req.query;
+    const query = {
+        isStandard,
+    };
+    if (startDate && endDate) {
+        query.date = {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate),
+        };
+    }
     const userId = decodedToken.id;
     const allGames = yield games_1.default.aggregate([
         {
-            $match: {
-                "config.userId": userId,
-                isStandard: req.params.type === 'true'
-            }
+            $match: Object.assign({ "config.userId": userId }, query)
         },
         { $sort: { date: -1 } },
         { $skip: 10 * (page - 1) },
@@ -47,11 +55,20 @@ const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 // Compte le nombre de parties
 const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
+    const isStandard = req.params.type === 'true';
+    const { startDate, endDate } = req.query;
+    const query = {
+        isStandard,
+    };
+    if (startDate && endDate) {
+        query.date = {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate),
+        };
+    }
     const countGames = yield games_1.default.aggregate([
         {
-            $match: {
-                isStandard: req.params.type === 'true'
-            }
+            $match: query
         },
         {
             $count: "count"
@@ -61,8 +78,23 @@ const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 // Récuperation des parties
 const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const page = req.params.page;
-    const allGames = yield games_1.default.find({ isStandard: req.params.type === 'true' }).sort({ date: -1 }).skip(20 * (page - 1)).limit(20);
+    const page = Number(req.params.page) || 1;
+    const isStandard = req.params.type === 'true';
+    const { startDate, endDate } = req.query;
+    const query = {
+        isStandard,
+    };
+    if (startDate && endDate) {
+        query.date = {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate),
+        };
+    }
+    const allGames = yield games_1.default
+        .find(query)
+        .sort({ date: -1 })
+        .skip(20 * (page - 1))
+        .limit(20);
     const response = allGames.map((game) => ({
         id: game._id,
         date: game.date,

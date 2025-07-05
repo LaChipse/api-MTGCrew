@@ -13,14 +13,29 @@ interface TokenPayload extends JwtPayload {
 const history = async (req, res) => {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
-    const page = req.params.page
+
+    const page = Number(req.params.page) || 1;
+    const isStandard = req.params.type === 'true';
+    const { startDate, endDate } = req.query;
+
+    const query: Record<string, unknown> = {
+        isStandard,
+    };
+
+
+    if (startDate && endDate) {
+        query.date = {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate),
+        };
+    }
 
     const userId = decodedToken.id;
     const allGames = await games.aggregate([
         {
             $match: {
                 "config.userId": userId,
-                isStandard: req.params.type === 'true'
+                ...query,
             }
         },
         { $sort: { date: -1 } },
@@ -42,13 +57,61 @@ const history = async (req, res) => {
     res.status(200).json(response)
 }
 
+
 // Compte le nombre de parties
-const count = async (req, res) => {
+const historyCount = async (req, res) => {
+    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
+    const userId = decodedToken.id;
+
+    const isStandard = req.params.type === 'true';
+    const { startDate, endDate } = req.query;
+
+    const query: Record<string, unknown> = {
+        isStandard,
+    };
+
+    if (startDate && endDate) {
+        query.date = {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate),
+        };
+    }
+
     const countGames = await games.aggregate([
         {
             $match: {
-                isStandard: req.params.type === 'true'
+                "config.userId": userId,
+                ...query
             }
+        },
+        {
+            $count:"count"
+        }
+    ])
+
+    res.status(200).json(countGames?.[0]?.count || 0)
+}
+
+// Compte le nombre de parties
+const count = async (req, res) => {
+    const isStandard = req.params.type === 'true';
+    const { startDate, endDate } = req.query;
+
+    const query: Record<string, unknown> = {
+        isStandard,
+    };
+
+    if (startDate && endDate) {
+        query.date = {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate),
+        };
+    }
+
+    const countGames = await games.aggregate([
+        {
+            $match: query
         },
         {
             $count:"count"
@@ -60,8 +123,26 @@ const count = async (req, res) => {
 
 // Récuperation des parties
 const getAll = async (req, res) => {
-    const page = req.params.page
-    const allGames = await games.find({ isStandard: req.params.type === 'true' }).sort({ date: -1 }).skip(20 * (page - 1)).limit(20)
+    const page = Number(req.params.page) || 1;
+    const isStandard = req.params.type === 'true';
+    const { startDate, endDate } = req.query;
+
+    const query: Record<string, unknown> = {
+        isStandard,
+    };
+
+    if (startDate && endDate) {
+        query.date = {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate),
+        };
+    }
+
+    const allGames = await games
+        .find(query)
+        .sort({ date: -1 })
+        .skip(20 * (page - 1))
+        .limit(20)
 
     const response = allGames.map((game) => (
         {
@@ -167,4 +248,4 @@ const add = async (req, res) => {
     }
 }
 
-export default { getAll, add, history, count };
+export default { getAll, add, history, count, historyCount };
