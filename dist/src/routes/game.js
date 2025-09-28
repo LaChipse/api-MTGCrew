@@ -12,6 +12,7 @@ router.post('/add', game_1.default.add);
 router.get('/all/:type/:page', game_1.default.getAll);
 router.get('/history/:type/:page', game_1.default.history);
 router.get('/count/:type', game_1.default.count);
+router.get('/historyCount/:type', game_1.default.historyCount);
 //Exportation
 exports.default = router;
 //# sourceMappingURL=game.js.map

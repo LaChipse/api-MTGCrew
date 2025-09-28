@@ -53,8 +53,35 @@ const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.status(200).json(response);
 });
 // Compte le nombre de parties
-const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const historyCount = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
+    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
+    const userId = decodedToken.id;
+    const isStandard = req.params.type === 'true';
+    const { startDate, endDate } = req.query;
+    const query = {
+        isStandard,
+    };
+    if (startDate && endDate) {
+        query.date = {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate),
+        };
+    }
+    const countGames = yield games_1.default.aggregate([
+        {
+            $match: Object.assign({ "config.userId": userId }, query)
+        },
+        {
+            $count: "count"
+        }
+    ]);
+    res.status(200).json(((_a = countGames === null || countGames === void 0 ? void 0 : countGames[0]) === null || _a === void 0 ? void 0 : _a.count) || 0);
+});
+// Compte le nombre de parties
+const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _b;
     const isStandard = req.params.type === 'true';
     const { startDate, endDate } = req.query;
     const query = {
@@ -74,7 +101,7 @@ const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             $count: "count"
         }
     ]);
-    res.status(200).json(((_a = countGames === null || countGames === void 0 ? void 0 : countGames[0]) === null || _a === void 0 ? void 0 : _a.count) || 0);
+    res.status(200).json(((_b = countGames === null || countGames === void 0 ? void 0 : countGames[0]) === null || _b === void 0 ? void 0 : _b.count) || 0);
 });
 // Récuperation des parties
 const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -159,5 +186,5 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             .catch(error => res.status(400).json({ error }));
     }
 });
-exports.default = { getAll, add, history, count };
+exports.default = { getAll, add, history, count, historyCount };
 //# sourceMappingURL=game.js.map
