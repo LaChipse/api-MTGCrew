@@ -16,19 +16,22 @@ const history = async (req, res) => {
 
     const page = Number(req.params.page) || 1;
     const isStandard = req.params.type === 'true';
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, winnerId, victoryRole, typeOfVictory } = req.query;
 
     const query: Record<string, unknown> = {
         isStandard,
     };
 
+    query.date = {
+        $gte: startDate? new Date(startDate) : new Date(0),
+        $lte: endDate ? new Date(endDate) : new Date(),
+    };
 
-    if (startDate && endDate) {
-        query.date = {
-            $gte: new Date(startDate),
-            $lte: new Date(endDate),
-        };
+    if (victoryRole || winnerId) {
+        query.victoire = winnerId ? winnerId : victoryRole
     }
+
+    if (typeOfVictory) query.typeVictoire = typeOfVictory
 
     const userId = decodedToken.id;
     const allGames = await games.aggregate([
@@ -65,18 +68,22 @@ const historyCount = async (req, res) => {
     const userId = decodedToken.id;
 
     const isStandard = req.params.type === 'true';
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, winnerId, victoryRole, typeOfVictory } = req.query;
 
     const query: Record<string, unknown> = {
         isStandard,
     };
 
-    if (startDate && endDate) {
-        query.date = {
-            $gte: new Date(startDate),
-            $lte: new Date(endDate),
-        };
+    query.date = {
+        $gte: startDate? new Date(startDate) : new Date(0),
+        $lte: endDate ? new Date(endDate) : new Date(),
+    };
+
+    if (victoryRole || winnerId) {
+        query.victoire = winnerId ? winnerId : victoryRole
     }
+
+    if (typeOfVictory) query.typeVictoire = typeOfVictory
 
     const countGames = await games.aggregate([
         {
@@ -96,18 +103,22 @@ const historyCount = async (req, res) => {
 // Compte le nombre de parties
 const count = async (req, res) => {
     const isStandard = req.params.type === 'true';
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, winnerId, victoryRole, typeOfVictory } = req.query;
 
     const query: Record<string, unknown> = {
         isStandard,
     };
 
-    if (startDate && endDate) {
-        query.date = {
-            $gte: new Date(startDate),
-            $lte: new Date(endDate),
-        };
+    query.date = {
+        $gte: startDate? new Date(startDate) : new Date(0),
+        $lte: endDate ? new Date(endDate) : new Date(),
+    };
+
+    if (victoryRole || winnerId) {
+        query.victoire = winnerId ? winnerId : victoryRole
     }
+
+    if (typeOfVictory) query.typeVictoire = typeOfVictory
 
     const countGames = await games.aggregate([
         {
@@ -125,18 +136,22 @@ const count = async (req, res) => {
 const getAll = async (req, res) => {
     const page = Number(req.params.page) || 1;
     const isStandard = req.params.type === 'true';
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, winnerId, victoryRole, typeOfVictory } = req.query;
 
     const query: Record<string, unknown> = {
         isStandard,
     };
 
-    if (startDate && endDate) {
-        query.date = {
-            $gte: new Date(startDate),
-            $lte: new Date(endDate),
-        };
+    query.date = {
+        $gte: startDate? new Date(startDate) : new Date(0),
+        $lte: endDate ? new Date(endDate) : new Date(),
+    };
+
+    if (victoryRole || winnerId) {
+        query.victoire = winnerId ? winnerId : victoryRole
     }
+
+    if (typeOfVictory) query.typeVictoire = typeOfVictory
 
     const allGames = await games
         .find(query)
