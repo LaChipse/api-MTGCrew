@@ -23,16 +23,19 @@ const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const page = Number(req.params.page) || 1;
     const isStandard = req.params.type === 'true';
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, winnerId, victoryRole, typeOfVictory } = req.query;
     const query = {
         isStandard,
     };
-    if (startDate && endDate) {
-        query.date = {
-            $gte: new Date(startDate),
-            $lte: new Date(endDate),
-        };
+    query.date = {
+        $gte: startDate ? new Date(startDate) : new Date(0),
+        $lte: endDate ? new Date(endDate) : new Date(),
+    };
+    if (victoryRole || winnerId) {
+        query.victoire = winnerId ? winnerId : victoryRole;
     }
+    if (typeOfVictory)
+        query.typeVictoire = typeOfVictory;
     const userId = decodedToken.id;
     const allGames = yield games_1.default.aggregate([
         {
@@ -59,16 +62,19 @@ const historyCount = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const userId = decodedToken.id;
     const isStandard = req.params.type === 'true';
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, winnerId, victoryRole, typeOfVictory } = req.query;
     const query = {
         isStandard,
     };
-    if (startDate && endDate) {
-        query.date = {
-            $gte: new Date(startDate),
-            $lte: new Date(endDate),
-        };
+    query.date = {
+        $gte: startDate ? new Date(startDate) : new Date(0),
+        $lte: endDate ? new Date(endDate) : new Date(),
+    };
+    if (victoryRole || winnerId) {
+        query.victoire = winnerId ? winnerId : victoryRole;
     }
+    if (typeOfVictory)
+        query.typeVictoire = typeOfVictory;
     const countGames = yield games_1.default.aggregate([
         {
             $match: Object.assign({ "config.userId": userId }, query)
@@ -83,16 +89,19 @@ const historyCount = (req, res) => __awaiter(void 0, void 0, void 0, function* (
 const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _b;
     const isStandard = req.params.type === 'true';
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, winnerId, victoryRole, typeOfVictory } = req.query;
     const query = {
         isStandard,
     };
-    if (startDate && endDate) {
-        query.date = {
-            $gte: new Date(startDate),
-            $lte: new Date(endDate),
-        };
+    query.date = {
+        $gte: startDate ? new Date(startDate) : new Date(0),
+        $lte: endDate ? new Date(endDate) : new Date(),
+    };
+    if (victoryRole || winnerId) {
+        query.victoire = winnerId ? winnerId : victoryRole;
     }
+    if (typeOfVictory)
+        query.typeVictoire = typeOfVictory;
     const countGames = yield games_1.default.aggregate([
         {
             $match: query
@@ -107,16 +116,19 @@ const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const page = Number(req.params.page) || 1;
     const isStandard = req.params.type === 'true';
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, winnerId, victoryRole, typeOfVictory } = req.query;
     const query = {
         isStandard,
     };
-    if (startDate && endDate) {
-        query.date = {
-            $gte: new Date(startDate),
-            $lte: new Date(endDate),
-        };
+    query.date = {
+        $gte: startDate ? new Date(startDate) : new Date(0),
+        $lte: endDate ? new Date(endDate) : new Date(),
+    };
+    if (victoryRole || winnerId) {
+        query.victoire = winnerId ? winnerId : victoryRole;
     }
+    if (typeOfVictory)
+        query.typeVictoire = typeOfVictory;
     const allGames = yield games_1.default
         .find(query)
         .sort({ date: -1 })

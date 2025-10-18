@@ -16,11 +16,13 @@ const history = async (req, res) => {
 
     const page = Number(req.params.page) || 1;
     const isStandard = req.params.type === 'true';
-    const { startDate, endDate, winnerId, victoryRole, typeOfVictory } = req.query;
+    const { startDate, endDate, winnerId, victoryRole, typeOfVictory  } = req.query;
 
     const query: Record<string, unknown> = {
         isStandard,
     };
+
+    let sort: Record<string, -1 | 1> = { date: -1 };
 
     query.date = {
         $gte: startDate? new Date(startDate) : new Date(0),
@@ -41,7 +43,7 @@ const history = async (req, res) => {
                 ...query,
             }
         },
-        { $sort: { date: -1 } },
+        { $sort: sort },
         { $skip: 10 * (page - 1) },
         { $limit : 10 }
     ])
