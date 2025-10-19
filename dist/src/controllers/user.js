@@ -52,7 +52,6 @@ const all = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             .find({ 'config.userId': user._id.toString(), isStandard })
             .sort({ date: -1 })
             .limit(100);
-        console.debug('LAST', lastHundredGames);
         const wins = lastHundredGames.reduce((acc, game) => {
             if (isStandard) {
                 const isWinner = game.victoire === user._id.toString() ? 1 : 0;
@@ -67,13 +66,19 @@ const all = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 return acc + isWinner;
             }
         }, 0);
+        const formatLastHundredGames = () => {
+            if (lastHundredGames.length) {
+                return lastHundredGames.length === 100 ? wins : Math.round((wins / lastHundredGames.length) * 100);
+            }
+            return 0;
+        };
         return ({
             id: user._id,
             fullName: `${user.prenom} ${user.nom.charAt(0)}.`,
             nbrDecks: user.nbrDecks,
             partiesJouees: user.partiesJouees,
             victoires: user.victoires,
-            hundredGameWins: wins
+            hundredGameWins: formatLastHundredGames(),
         });
     })));
     res.status(200).json(response);

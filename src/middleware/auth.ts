@@ -5,14 +5,21 @@ import { config } from '../config/config';
 //Mise en place token et vérification
 export const auth = (req, res, next) => {
     try {
-        const token = req.headers.authorization.split(' ')[1];
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ error: 'Token manquant !' });
+        }
+
         const decodedToken = jwt.verify(token, config.secret_key);
+        if (!decodedToken || typeof decodedToken !== 'object' || !decodedToken.id) {
+            return res.status(401).json({ error: 'Token invalide !' });
+        }
 
-        if (!decodedToken) res.status(402).json({ error: 'Requête non authentifiée !'});
+        // ✅ On attache l'ID à la requête
+        req.userId = decodedToken.id;
 
-        if (typeof decodedToken === "object" && "id" in decodedToken) next();
-        else console.error("Invalid token or token does not contain an 'id' property.");
-    } catch {
-        res.status(401).json('Requête non authentifiée !');
+        next();
+    } catch (error) {
+        res.status(401).json({ error: 'Requête non authentifiée !' });
     }
 };

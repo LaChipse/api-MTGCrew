@@ -10,6 +10,7 @@ const deck_1 = __importDefault(require("../controllers/deck"));
 const router = express.Router();
 //Routes User
 router.get('/mine', auth_1.auth, deck_1.default.getMine);
+router.get('/getCardsByName', deck_1.default.getDeckAvatar);
 router.post('/add', deck_1.default.add);
 router.delete('/delete', auth_1.auth, deck_1.default.softDelete);
 router.put('/update', auth_1.auth, deck_1.default.update);

@@ -13,6 +13,7 @@ export const partiesTypes = {
 export interface Deck {
     _id: ObjectId,
     nom: string,
+    illustrationUrl: string,
     userId: string,
     couleurs: Array<string>,
     type?: string, 
@@ -24,6 +25,7 @@ export interface Deck {
 
 const decksSchema = new mongoose.Schema({
     nom: String,
+    illustrationUrl: String,
     userId: String,
     couleurs: Array<String>,
     type: String, 

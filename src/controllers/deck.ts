@@ -1,8 +1,9 @@
 import jwt, { JwtPayload } from 'jsonwebtoken'
-import decks, { Deck } from '../models/decks'
+import decks from '../models/decks'
 import { ObjectId } from 'mongodb'
 import { config } from '../config/config';
-import users, { User } from '../models/users';
+import * as Scry from "scryfall-sdk";
+import users from '../models/users';
 
 interface TokenPayload extends JwtPayload {
     id: string;
@@ -42,6 +43,25 @@ const getAll = async (req, res) => {
     ))
 
     res.status(200).json(response)
+}
+
+const getDeckIllustration = async (req, res) => {
+    const { fuzzyName } = req.query
+
+    try {
+        const cardsByName = await Scry.Cards.byName(fuzzyName, true);
+        res.status(200).json({
+            id: cardsByName.id,
+            illustrationId: cardsByName.illustration_id,
+            name: cardsByName.name,
+            lang: cardsByName.lang,
+            imageUrlSmall: cardsByName.image_uris.small,
+            imageUrlPng: cardsByName.image_uris.png,
+            imageUrlNormal: cardsByName.image_uris.normal,
+        })
+    } catch (error) {
+        res.status(200).json(error)
+    }
 }
 
 // Ajout d'un deck
@@ -108,4 +128,4 @@ const update = async (req, res) => {
         .catch(error => res.status(400).json({ error }));
 }
 
-export default { getAll, getMine, add, softDelete, update, getUserDeck };
+export default { getAll, getMine, add, softDelete, update, getUserDeck, getDeckIllustration };
