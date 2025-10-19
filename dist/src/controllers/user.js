@@ -28,6 +28,7 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const mongodb_1 = require("mongodb");
 const users_1 = __importDefault(require("../models/users"));
 const config_1 = require("../config/config");
+const games_1 = __importDefault(require("../models/games"));
 // Récupération d'un utilisateur
 const getOne = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
@@ -44,14 +45,37 @@ const getOne = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 // Récupération des utilisateurs
 const all = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const isStandard = req.params.type === 'true';
     const allUsers = yield users_1.default.find().sort({ prenom: 1 });
-    const response = allUsers.map((user) => ({
-        id: user._id,
-        fullName: `${user.prenom} ${user.nom.charAt(0)}.`,
-        nbrDecks: user.nbrDecks,
-        partiesJouees: user.partiesJouees,
-        victoires: user.victoires
-    }));
+    const response = yield Promise.all(allUsers.map((user) => __awaiter(void 0, void 0, void 0, function* () {
+        const lastHundredGames = yield games_1.default
+            .find({ 'config.userId': user._id.toString(), isStandard })
+            .sort({ date: -1 })
+            .limit(100);
+        console.debug('LAST', lastHundredGames);
+        const wins = lastHundredGames.reduce((acc, game) => {
+            if (isStandard) {
+                const isWinner = game.victoire === user._id.toString() ? 1 : 0;
+                return acc + isWinner;
+            }
+            else {
+                const userConfig = Array.isArray(game.config)
+                    ? game.config.find((c) => c.userId === user._id.toString()) : null;
+                if (!userConfig)
+                    return acc;
+                const isWinner = game.victoire === userConfig.role ? 1 : 0;
+                return acc + isWinner;
+            }
+        }, 0);
+        return ({
+            id: user._id,
+            fullName: `${user.prenom} ${user.nom.charAt(0)}.`,
+            nbrDecks: user.nbrDecks,
+            partiesJouees: user.partiesJouees,
+            victoires: user.victoires,
+            hundredGameWins: wins
+        });
+    })));
     res.status(200).json(response);
 });
 //Récupere des utilisateurs et de leurs decks

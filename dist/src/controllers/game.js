@@ -27,6 +27,7 @@ const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const query = {
         isStandard,
     };
+    let sort = { date: -1 };
     query.date = {
         $gte: startDate ? new Date(startDate) : new Date(0),
         $lte: endDate ? new Date(endDate) : new Date(),
@@ -41,7 +42,7 @@ const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         {
             $match: Object.assign({ "config.userId": userId }, query)
         },
-        { $sort: { date: -1 } },
+        { $sort: sort },
         { $skip: 10 * (page - 1) },
         { $limit: 10 }
     ]);
