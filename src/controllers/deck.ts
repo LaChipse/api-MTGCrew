@@ -50,17 +50,27 @@ const getDeckIllustration = async (req, res) => {
 
     try {
         const cardsByName = await Scry.Cards.byName(fuzzyName, true);
+        let imageUris: Array<Record<string, any>>;
+
+        if (cardsByName.card_faces && Array.isArray(cardsByName.card_faces) && cardsByName.card_faces.length > 0) {
+            imageUris = cardsByName.card_faces.map((cf) => (
+                {
+                    imageUrlSmall: cf.image_uris.small,
+                    imageUrlNormal: cf.image_uris.normal,
+                }
+            ))
+        } else imageUris = [{
+            imageUrlSmall: cardsByName.image_uris.small,
+            imageUrlNormal: cardsByName.image_uris.normal
+        }]
         res.status(200).json({
             id: cardsByName.id,
-            illustrationId: cardsByName.illustration_id,
             name: cardsByName.name,
             lang: cardsByName.lang,
-            imageUrlSmall: cardsByName.image_uris.small,
-            imageUrlPng: cardsByName.image_uris.png,
-            imageUrlNormal: cardsByName.image_uris.normal,
+            imageUris,
         })
     } catch (error) {
-        res.status(200).json(error)
+        console.debug('ERROR', error)
     }
 }
 

@@ -67,13 +67,24 @@ const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }));
     res.status(200).json(response);
 });
-const getDeckAvatar = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.debug('PARAMS', req.params);
-    const { fuzzyName } = req.params;
-    console.debug('FUZZY', fuzzyName);
-    const cardsByName = yield Scry.Cards.byName(fuzzyName, true);
-    console.debug('CARDS', cardsByName);
-    res.status(200).json(cardsByName);
+const getDeckIllustration = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { fuzzyName } = req.query;
+    try {
+        const cardsByName = yield Scry.Cards.byName(fuzzyName, true);
+        console.debug('ERROr', cardsByName);
+        res.status(200).json({
+            id: cardsByName.id,
+            illustrationId: cardsByName.illustration_id,
+            name: cardsByName.name,
+            lang: cardsByName.lang,
+            imageUrlSmall: cardsByName.image_uris.small,
+            imageUrlPng: cardsByName.image_uris.png,
+            imageUrlNormal: cardsByName.image_uris.normal,
+        });
+    }
+    catch (error) {
+        console.debug('ERROr', error);
+    }
 });
 // Ajout d'un deck
 const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -118,5 +129,5 @@ const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }))
         .catch(error => res.status(400).json({ error }));
 });
-exports.default = { getAll, getMine, add, softDelete, update, getUserDeck, getDeckAvatar };
+exports.default = { getAll, getMine, add, softDelete, update, getUserDeck, getDeckIllustration };
 //# sourceMappingURL=deck.js.map
