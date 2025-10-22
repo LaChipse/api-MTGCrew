@@ -34,7 +34,8 @@ const getUserDeck = async (req, res) => {
 const getAll = async (req, res) => {
     const allDecks = await decks.find().sort({ nom: 1 })
 
-    const response = allDecks.map((deck) => (
+    try {
+        const response = allDecks.map((deck) => (
         {
             id: deck._id,
             nom: deck.nom,
@@ -43,6 +44,10 @@ const getAll = async (req, res) => {
     ))
 
     res.status(200).json(response)
+    } catch (e) {
+        res.status(400).json('Erreur lors de la récupération des decks')
+    }
+    
 }
 
 const getDeckIllustration = async (req, res) => {
@@ -69,8 +74,8 @@ const getDeckIllustration = async (req, res) => {
             lang: cardsByName.lang,
             imageUris,
         })
-    } catch (error) {
-        console.debug('ERROR', error)
+    } catch (e) {
+        res.status(404).json('Nom imprécis. Veuillez affiner votre recherche')
     }
 }
 
@@ -91,7 +96,7 @@ const add = async (req, res) => {
             
             res.status(200).json('deck ajouté')
         })
-        .catch(error => res.status(400).json({ error }));
+        .catch(() => res.status(400).json('Erreur lors de l\'ajout du deck'));
 }
 
 // Suppression d'un deck
@@ -112,8 +117,9 @@ const softDelete = async (req, res) => {
                 { $inc: { nbrDecks: -1 } }
             );
             
-            res.status(200).json('deck supprimé')
+            res.status(200).json('Deck supprimé')
         })
+        .catch(() => res.status(400).json('Erreur lors de la suppression du deck'));
 }
 
 // Modification d'un deck
@@ -135,7 +141,7 @@ const update = async (req, res) => {
         .then(async () => { 
             res.status(200).json('deck modifié')
         })
-        .catch(error => res.status(400).json({ error }));
+        .catch(() => res.status(400).json('Erreur lors de la modification du deck'));
 }
 
 export default { getAll, getMine, add, softDelete, update, getUserDeck, getDeckIllustration };

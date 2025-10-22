@@ -60,30 +60,43 @@ const getUserDeck = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 // Récuperation des decks
 const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const allDecks = yield decks_1.default.find().sort({ nom: 1 });
-    const response = allDecks.map((deck) => ({
-        id: deck._id,
-        nom: deck.nom,
-        userId: deck.userId,
-    }));
-    res.status(200).json(response);
+    try {
+        const response = allDecks.map((deck) => ({
+            id: deck._id,
+            nom: deck.nom,
+            userId: deck.userId,
+        }));
+        res.status(200).json(response);
+    }
+    catch (e) {
+        res.status(400).json('Erreur lors de la récupération des decks');
+    }
 });
 const getDeckIllustration = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { fuzzyName } = req.query;
     try {
         const cardsByName = yield Scry.Cards.byName(fuzzyName, true);
-        console.debug('ERROr', cardsByName);
+        let imageUris;
+        if (cardsByName.card_faces && Array.isArray(cardsByName.card_faces) && cardsByName.card_faces.length > 0) {
+            imageUris = cardsByName.card_faces.map((cf) => ({
+                imageUrlSmall: cf.image_uris.small,
+                imageUrlNormal: cf.image_uris.normal,
+            }));
+        }
+        else
+            imageUris = [{
+                    imageUrlSmall: cardsByName.image_uris.small,
+                    imageUrlNormal: cardsByName.image_uris.normal
+                }];
         res.status(200).json({
             id: cardsByName.id,
-            illustrationId: cardsByName.illustration_id,
             name: cardsByName.name,
             lang: cardsByName.lang,
-            imageUrlSmall: cardsByName.image_uris.small,
-            imageUrlPng: cardsByName.image_uris.png,
-            imageUrlNormal: cardsByName.image_uris.normal,
+            imageUris,
         });
     }
-    catch (error) {
-        console.debug('ERROr', error);
+    catch (e) {
+        res.status(404).json('Nom imprécis. Veuillez affiner votre recherche');
     }
 });
 // Ajout d'un deck
@@ -97,7 +110,7 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         yield users_1.default.updateOne({ _id: new mongodb_1.ObjectId(userId) }, { $inc: { nbrDecks: 1 } });
         res.status(200).json('deck ajouté');
     }))
-        .catch(error => res.status(400).json({ error }));
+        .catch(() => res.status(400).json('Erreur lors de l\'ajout du deck'));
 });
 // Suppression d'un deck
 const softDelete = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -111,8 +124,9 @@ const softDelete = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     yield decks_1.default.deleteOne({ _id: new mongodb_1.ObjectId(deckId) })
         .then(() => __awaiter(void 0, void 0, void 0, function* () {
         yield users_1.default.updateOne({ _id: new mongodb_1.ObjectId(userId) }, { $inc: { nbrDecks: -1 } });
-        res.status(200).json('deck supprimé');
-    }));
+        res.status(200).json('Deck supprimé');
+    }))
+        .catch(() => res.status(400).json('Erreur lors de la suppression du deck'));
 });
 // Modification d'un deck
 const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -127,7 +141,7 @@ const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         .then(() => __awaiter(void 0, void 0, void 0, function* () {
         res.status(200).json('deck modifié');
     }))
-        .catch(error => res.status(400).json({ error }));
+        .catch(() => res.status(400).json('Erreur lors de la modification du deck'));
 });
 exports.default = { getAll, getMine, add, softDelete, update, getUserDeck, getDeckIllustration };
 //# sourceMappingURL=deck.js.map
