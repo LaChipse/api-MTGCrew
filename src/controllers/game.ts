@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { ObjectId } from 'mongodb'
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { config } from '../config/config';
 import decks from '../models/decks';
@@ -36,7 +36,10 @@ const history = async (req, res) => {
     if (typeOfVictory) query.typeVictoire = typeOfVictory
 
     const userId = decodedToken.id;
-    const allGames = await games.aggregate([
+    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
+
+    try {
+        const allGames = await games.aggregate([
         {
             $match: {
                 "config.userId": userId,
@@ -60,6 +63,10 @@ const history = async (req, res) => {
     ))
 
     res.status(200).json(response)
+    } catch (error) {
+        res.status(400).json('Erreur lors de la récupération des parties')
+    }
+    
 }
 
 
@@ -67,7 +74,10 @@ const history = async (req, res) => {
 const historyCount = async (req, res) => {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
+
     const userId = decodedToken.id;
+    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
+
 
     const isStandard = req.params.type === 'true';
     const { startDate, endDate, winnerId, victoryRole, typeOfVictory } = req.query;
@@ -87,7 +97,8 @@ const historyCount = async (req, res) => {
 
     if (typeOfVictory) query.typeVictoire = typeOfVictory
 
-    const countGames = await games.aggregate([
+    try {
+        const countGames = await games.aggregate([
         {
             $match: {
                 "config.userId": userId,
@@ -100,6 +111,10 @@ const historyCount = async (req, res) => {
     ])
 
     res.status(200).json(countGames?.[0]?.count || 0)
+    } catch (error) {
+        res.status(400).json('Erreur lors du decompte des parties')
+    }
+    
 }
 
 // Compte le nombre de parties
@@ -122,16 +137,21 @@ const count = async (req, res) => {
 
     if (typeOfVictory) query.typeVictoire = typeOfVictory
 
-    const countGames = await games.aggregate([
-        {
-            $match: query
-        },
-        {
-            $count:"count"
-        }
-    ])
+    try {
+        const countGames = await games.aggregate([
+            {
+                $match: query
+            },
+            {
+                $count:"count"
+            }
+        ])
 
-    res.status(200).json(countGames?.[0]?.count || 0)
+        res.status(200).json(countGames?.[0]?.count || 0)
+    } catch (error) {
+        res.status(400).json('Erreur lors du decompte des parties')
+    }
+    
 }
 
 // Récuperation des parties
@@ -155,24 +175,29 @@ const getAll = async (req, res) => {
 
     if (typeOfVictory) query.typeVictoire = typeOfVictory
 
-    const allGames = await games
+    try {
+        const allGames = await games
         .find(query)
         .sort({ date: -1 })
         .skip(20 * (page - 1))
         .limit(20)
 
-    const response = allGames.map((game) => (
-        {
-            id: game._id,
-            date: game.date,
-            type: game.type,
-            config: game.config,
-            victoire: game.victoire, 
-            typeVictoire: game.typeVictoire
-        }
-    ))
+        const response = allGames.map((game) => (
+            {
+                id: game._id,
+                date: game.date,
+                type: game.type,
+                config: game.config,
+                victoire: game.victoire, 
+                typeVictoire: game.typeVictoire
+            }
+        ))
 
-    res.status(200).json(response)
+        res.status(200).json(response)
+    } catch (error) {
+        res.status(400).json('Erreur lors de la récupération des parties')
+    }
+    
 }
 
 // Ajout d'une partie
@@ -204,30 +229,30 @@ const add = async (req, res) => {
         }
 
         await games.create({...gameObject})
-        .then(async () => { 
-            await users.updateMany(
-                { _id: { $in: [...new Set(usersPlayer)] }},
-                { $inc: { 'partiesJouees.standard': 1 } }
-            );
+            .then(async () => { 
+                await users.updateMany(
+                    { _id: { $in: [...new Set(usersPlayer)] }},
+                    { $inc: { 'partiesJouees.standard': 1 } }
+                );
 
-            await users.updateMany(
-                { _id: { $in: [...new Set(winnersStandard)] }},
-                { $inc: { 'victoires.standard': 1 } }
-            );
+                await users.updateMany(
+                    { _id: { $in: [...new Set(winnersStandard)] }},
+                    { $inc: { 'victoires.standard': 1 } }
+                );
 
-            await decks.updateMany(
-                { _id: { $in: [...new Set(deckPlayer)] }},
-                { $inc: { 'parties.standard': 1 } }
-            );
+                await decks.updateMany(
+                    { _id: { $in: [...new Set(deckPlayer)] }},
+                    { $inc: { 'parties.standard': 1 } }
+                );
 
-            await decks.updateMany(
-                { _id: { $in: [...new Set(decksWinnersStandard)] }},
-                { $inc: { 'victoires.standard': 1 } }
-            );
-            
-            res.status(200).json({ config: configGame, victoire })
-        })
-        .catch(error => res.status(400).json({ error }));
+                await decks.updateMany(
+                    { _id: { $in: [...new Set(decksWinnersStandard)] }},
+                    { $inc: { 'victoires.standard': 1 } }
+                );
+                
+                res.status(200).json({ config: configGame, victoire })
+            })
+            .catch(error => res.status(400).json('Erreur lors de la création de la partie'));
     } else {
         if (type === 'treachery') {
             winnersSpecial = configGame.filter((conf: PlayersBlock) => tricheryRolVictory(conf.role)).map((winner: PlayersBlock) => winner.userId)
@@ -261,7 +286,7 @@ const add = async (req, res) => {
             
             res.status(200).json({ config: configGame, victoire })
         })
-        .catch(error => res.status(400).json({ error }));
+        .catch(error => res.status(400).json('Erreur lors de la création de la partie'));
     }
 }
 

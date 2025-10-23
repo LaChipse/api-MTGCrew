@@ -11,30 +11,43 @@ interface TokenPayload extends JwtPayload {
 
 // Récuperation de mes decks
 const getMine = async (req, res) => {
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
+        const token = req.headers.authorization.split(' ')[1];
+        const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
 
-    const userId = decodedToken.id;
-    const objectUserId = new ObjectId(userId)
-    const mineDecks = await decks.find({ userId: objectUserId }).sort({ nom: 1 })
+        const userId = decodedToken.id;
 
-    res.status(200).json(mineDecks)
+        if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
+        const objectUserId = new ObjectId(userId)
+    try {
+        const mineDecks = await decks.find({ userId: objectUserId }).sort({ nom: 1 })
+
+        res.status(200).json(mineDecks)
+    } catch (error) {
+        res.status(400).json('Erreur lors de la récupération des decks')
+    }
+    
 }
 
 // Récuperation des decks d'un joueur
 const getUserDeck = async (req, res) => {
     const userId = req.params.id as string;
-    const objectUserId = new ObjectId(userId)
-    const userDecks = await decks.find({ userId: objectUserId }).sort({ nom: 1 })
 
-    res.status(200).json(userDecks)
+    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
+    const objectUserId = new ObjectId(userId)
+
+    try {
+        const userDecks = await decks.find({ userId: objectUserId }).sort({ nom: 1 })
+    
+        res.status(200).json(userDecks)
+    } catch (error) {
+        res.status(400).json('Erreur lors de la récupération du deck du joueur')
+    }
 }
 
 // Récuperation des decks
 const getAll = async (req, res) => {
-    const allDecks = await decks.find().sort({ nom: 1 })
-
     try {
+        const allDecks = await decks.find().sort({ nom: 1 })
         const response = allDecks.map((deck) => (
         {
             id: deck._id,
@@ -87,6 +100,8 @@ const add = async (req, res) => {
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
 
     const userId = decodedToken.id;
+    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
+    
     await decks.create({...deckObject, userId: new ObjectId(userId), parties: {standard: 0, special: 0}, victoires: {standard: 0, special: 0}})
         .then(async () => { 
             await users.updateOne(
@@ -107,6 +122,8 @@ const softDelete = async (req, res) => {
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
 
     const userId = decodedToken.id;
+    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
+
     const deck = await decks.findById(deckId)
 
     if (deck.userId !== userId) res.status(401).json({ error: 'Requête non autorisée !'});
@@ -130,6 +147,8 @@ const update = async (req, res) => {
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
 
     const userId = decodedToken.id;
+    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
+
     const deck = await decks.findById(deckObject.id)
 
     if (deck.userId !== userId) res.status(401).json({ error: 'Requête non autorisée !'});

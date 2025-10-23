@@ -46,21 +46,35 @@ const getMine = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const userId = decodedToken.id;
+    if (!mongodb_1.ObjectId.isValid(userId))
+        throw new Error('userId invalide');
     const objectUserId = new mongodb_1.ObjectId(userId);
-    const mineDecks = yield decks_1.default.find({ userId: objectUserId }).sort({ nom: 1 });
-    res.status(200).json(mineDecks);
+    try {
+        const mineDecks = yield decks_1.default.find({ userId: objectUserId }).sort({ nom: 1 });
+        res.status(200).json(mineDecks);
+    }
+    catch (error) {
+        res.status(400).json('Erreur lors de la récupération des decks');
+    }
 });
 // Récuperation des decks d'un joueur
 const getUserDeck = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = req.params.id;
+    if (!mongodb_1.ObjectId.isValid(userId))
+        throw new Error('userId invalide');
     const objectUserId = new mongodb_1.ObjectId(userId);
-    const userDecks = yield decks_1.default.find({ userId: objectUserId }).sort({ nom: 1 });
-    res.status(200).json(userDecks);
+    try {
+        const userDecks = yield decks_1.default.find({ userId: objectUserId }).sort({ nom: 1 });
+        res.status(200).json(userDecks);
+    }
+    catch (error) {
+        res.status(400).json('Erreur lors de la récupération du deck du joueur');
+    }
 });
 // Récuperation des decks
 const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const allDecks = yield decks_1.default.find().sort({ nom: 1 });
     try {
+        const allDecks = yield decks_1.default.find().sort({ nom: 1 });
         const response = allDecks.map((deck) => ({
             id: deck._id,
             nom: deck.nom,
@@ -105,6 +119,8 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const userId = decodedToken.id;
+    if (!mongodb_1.ObjectId.isValid(userId))
+        throw new Error('userId invalide');
     yield decks_1.default.create(Object.assign(Object.assign({}, deckObject), { userId: new mongodb_1.ObjectId(userId), parties: { standard: 0, special: 0 }, victoires: { standard: 0, special: 0 } }))
         .then(() => __awaiter(void 0, void 0, void 0, function* () {
         yield users_1.default.updateOne({ _id: new mongodb_1.ObjectId(userId) }, { $inc: { nbrDecks: 1 } });
@@ -118,6 +134,8 @@ const softDelete = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const userId = decodedToken.id;
+    if (!mongodb_1.ObjectId.isValid(userId))
+        throw new Error('userId invalide');
     const deck = yield decks_1.default.findById(deckId);
     if (deck.userId !== userId)
         res.status(401).json({ error: 'Requête non autorisée !' });
@@ -134,6 +152,8 @@ const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const userId = decodedToken.id;
+    if (!mongodb_1.ObjectId.isValid(userId))
+        throw new Error('userId invalide');
     const deck = yield decks_1.default.findById(deckObject.id);
     if (deck.userId !== userId)
         res.status(401).json({ error: 'Requête non autorisée !' });

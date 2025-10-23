@@ -12,6 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const mongodb_1 = require("mongodb");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = require("../config/config");
 const decks_1 = __importDefault(require("../models/decks"));
@@ -38,23 +39,30 @@ const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     if (typeOfVictory)
         query.typeVictoire = typeOfVictory;
     const userId = decodedToken.id;
-    const allGames = yield games_1.default.aggregate([
-        {
-            $match: Object.assign({ "config.userId": userId }, query)
-        },
-        { $sort: sort },
-        { $skip: 10 * (page - 1) },
-        { $limit: 10 }
-    ]);
-    const response = allGames.map((game) => ({
-        id: game._id,
-        date: game.date,
-        type: game.type,
-        config: game.config,
-        victoire: game.victoire,
-        typeVictoire: game.typeVictoire
-    }));
-    res.status(200).json(response);
+    if (!mongodb_1.ObjectId.isValid(userId))
+        throw new Error('userId invalide');
+    try {
+        const allGames = yield games_1.default.aggregate([
+            {
+                $match: Object.assign({ "config.userId": userId }, query)
+            },
+            { $sort: sort },
+            { $skip: 10 * (page - 1) },
+            { $limit: 10 }
+        ]);
+        const response = allGames.map((game) => ({
+            id: game._id,
+            date: game.date,
+            type: game.type,
+            config: game.config,
+            victoire: game.victoire,
+            typeVictoire: game.typeVictoire
+        }));
+        res.status(200).json(response);
+    }
+    catch (error) {
+        res.status(400).json('Erreur lors de la récupération des parties');
+    }
 });
 // Compte le nombre de parties
 const historyCount = (req, res) => __awaiter(void 0, void 0, void 0, function* () {

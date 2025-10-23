@@ -30,7 +30,7 @@ const signup = async (req, res) => {
                     .then(() => { res.status(201).send('Profil enregistré !') })
                     .catch(error => res.status(400).json({ error }));
             })
-            .catch(error => res.status(500).json({ error }));
+            .catch(error => res.status(500).json('Erreur lors de la création de l\'utilisateur'));
     }
 }
 
@@ -39,9 +39,7 @@ const login = async (req, res) => {
     const userObject = req.body;
     const user = await users.findOne({ nom: userObject.nom, prenom: userObject.prenom })
 
-    if (!user) {
-        return res.status(404).json('Utilisateur non trouvé !');
-    }
+    if (!user) return res.status(404).json('Utilisateur non trouvé !');
 
     bcrypt.compare(userObject.password, user.password)
         .then(valid => {
