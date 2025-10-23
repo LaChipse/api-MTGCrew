@@ -48,16 +48,15 @@ const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 .then(() => { res.status(201).send('Profil enregistré !'); })
                 .catch(error => res.status(400).json({ error }));
         }))
-            .catch(error => res.status(500).json({ error }));
+            .catch(error => res.status(500).json('Erreur lors de la création de l\'utilisateur'));
     }
 });
 //Connexion utilisateur
 const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const userObject = req.body;
     const user = yield users_1.default.findOne({ nom: userObject.nom, prenom: userObject.prenom });
-    if (!user) {
+    if (!user)
         return res.status(404).json('Utilisateur non trouvé !');
-    }
     bcrypt_1.default.compare(userObject.password, user.password)
         .then(valid => {
         if (!valid) {

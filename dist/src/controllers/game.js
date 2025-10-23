@@ -70,6 +70,8 @@ const historyCount = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const userId = decodedToken.id;
+    if (!mongodb_1.ObjectId.isValid(userId))
+        throw new Error('userId invalide');
     const isStandard = req.params.type === 'true';
     const { startDate, endDate, winnerId, victoryRole, typeOfVictory } = req.query;
     const query = {
@@ -84,15 +86,20 @@ const historyCount = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
     if (typeOfVictory)
         query.typeVictoire = typeOfVictory;
-    const countGames = yield games_1.default.aggregate([
-        {
-            $match: Object.assign({ "config.userId": userId }, query)
-        },
-        {
-            $count: "count"
-        }
-    ]);
-    res.status(200).json(((_a = countGames === null || countGames === void 0 ? void 0 : countGames[0]) === null || _a === void 0 ? void 0 : _a.count) || 0);
+    try {
+        const countGames = yield games_1.default.aggregate([
+            {
+                $match: Object.assign({ "config.userId": userId }, query)
+            },
+            {
+                $count: "count"
+            }
+        ]);
+        res.status(200).json(((_a = countGames === null || countGames === void 0 ? void 0 : countGames[0]) === null || _a === void 0 ? void 0 : _a.count) || 0);
+    }
+    catch (error) {
+        res.status(400).json('Erreur lors du decompte des parties');
+    }
 });
 // Compte le nombre de parties
 const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -111,15 +118,20 @@ const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
     if (typeOfVictory)
         query.typeVictoire = typeOfVictory;
-    const countGames = yield games_1.default.aggregate([
-        {
-            $match: query
-        },
-        {
-            $count: "count"
-        }
-    ]);
-    res.status(200).json(((_b = countGames === null || countGames === void 0 ? void 0 : countGames[0]) === null || _b === void 0 ? void 0 : _b.count) || 0);
+    try {
+        const countGames = yield games_1.default.aggregate([
+            {
+                $match: query
+            },
+            {
+                $count: "count"
+            }
+        ]);
+        res.status(200).json(((_b = countGames === null || countGames === void 0 ? void 0 : countGames[0]) === null || _b === void 0 ? void 0 : _b.count) || 0);
+    }
+    catch (error) {
+        res.status(400).json('Erreur lors du decompte des parties');
+    }
 });
 // Récuperation des parties
 const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -138,20 +150,25 @@ const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
     if (typeOfVictory)
         query.typeVictoire = typeOfVictory;
-    const allGames = yield games_1.default
-        .find(query)
-        .sort({ date: -1 })
-        .skip(20 * (page - 1))
-        .limit(20);
-    const response = allGames.map((game) => ({
-        id: game._id,
-        date: game.date,
-        type: game.type,
-        config: game.config,
-        victoire: game.victoire,
-        typeVictoire: game.typeVictoire
-    }));
-    res.status(200).json(response);
+    try {
+        const allGames = yield games_1.default
+            .find(query)
+            .sort({ date: -1 })
+            .skip(20 * (page - 1))
+            .limit(20);
+        const response = allGames.map((game) => ({
+            id: game._id,
+            date: game.date,
+            type: game.type,
+            config: game.config,
+            victoire: game.victoire,
+            typeVictoire: game.typeVictoire
+        }));
+        res.status(200).json(response);
+    }
+    catch (error) {
+        res.status(400).json('Erreur lors de la récupération des parties');
+    }
 });
 // Ajout d'une partie
 const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -185,7 +202,7 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             yield decks_1.default.updateMany({ _id: { $in: [...new Set(decksWinnersStandard)] } }, { $inc: { 'victoires.standard': 1 } });
             res.status(200).json({ config: configGame, victoire });
         }))
-            .catch(error => res.status(400).json({ error }));
+            .catch(error => res.status(400).json('Erreur lors de la création de la partie'));
     }
     else {
         if (type === 'treachery') {
@@ -204,7 +221,7 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             yield decks_1.default.updateMany({ _id: { $in: [...new Set(decksWinnersSpecial)] } }, { $inc: { 'victoires.special': 1 } });
             res.status(200).json({ config: configGame, victoire });
         }))
-            .catch(error => res.status(400).json({ error }));
+            .catch(error => res.status(400).json('Erreur lors de la création de la partie'));
     }
 });
 exports.default = { getAll, add, history, count, historyCount };
