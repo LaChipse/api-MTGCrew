@@ -2,8 +2,8 @@ import jwt, { JwtPayload } from 'jsonwebtoken'
 import decks from '../models/decks'
 import { ObjectId } from 'mongodb'
 import { config } from '../config/config';
-import * as Scry from "scryfall-sdk";
 import users from '../models/users';
+import Scryfall from '../services/scryfall/ScryFall';
 
 interface TokenPayload extends JwtPayload {
     id: string;
@@ -65,22 +65,12 @@ const getAll = async (req, res) => {
 
 const getDeckIllustration = async (req, res) => {
     const { fuzzyName } = req.query
+    const scryfall = new Scryfall
 
     try {
-        const cardsByName = await Scry.Cards.byName(fuzzyName, true);
-        let imageUris: Array<Record<string, any>>;
+        const cardsByName = await scryfall.getCards( fuzzyName );
+        const imageUris = await scryfall.getIllustrationsCards(cardsByName.prints_search_uri)
 
-        if (cardsByName.card_faces && Array.isArray(cardsByName.card_faces) && cardsByName.card_faces.length > 0) {
-            imageUris = cardsByName.card_faces.map((cf) => (
-                {
-                    imageUrlSmall: cf.image_uris.small,
-                    imageUrlNormal: cf.image_uris.normal,
-                }
-            ))
-        } else imageUris = [{
-            imageUrlSmall: cardsByName.image_uris.small,
-            imageUrlNormal: cardsByName.image_uris.normal
-        }]
         res.status(200).json({
             id: cardsByName.id,
             name: cardsByName.name,
