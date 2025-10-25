@@ -30,4 +30,8 @@ app.use('/user', user);
 app.use('/deck', deck);
 app.use('/game', game);
 
+app.listen(3000, () => {
+    console.log(`Serveur démarré sur le port ${3000}`);
+});
+
 export default app;

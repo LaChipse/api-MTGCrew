@@ -63,6 +63,21 @@ const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         res.status(400).json('Erreur lors de la récupération des decks');
     }
 });
+const getOne = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const deckId = req.params.id;
+    if (!mongodb_1.ObjectId.isValid(deckId))
+        throw new Error('deckId invalide');
+    const objectDeckId = new mongodb_1.ObjectId(deckId);
+    try {
+        const deck = yield decks_1.default.findById(deckId);
+        if (!deck)
+            res.status(404).json('Impossible de trouver le deck');
+        res.status(200).json(deck);
+    }
+    catch (e) {
+        res.status(400).json('Erreur lors de la récupération du deck');
+    }
+});
 const getDeckIllustration = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { fuzzyName } = req.query;
     const scryfall = new ScryFall_1.default;
@@ -130,5 +145,5 @@ const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }))
         .catch(() => res.status(400).json('Erreur lors de la modification du deck'));
 });
-exports.default = { getAll, getMine, add, softDelete, update, getUserDeck, getDeckIllustration };
+exports.default = { getAll, getMine, add, softDelete, update, getUserDeck, getDeckIllustration, getOne };
 //# sourceMappingURL=deck.js.map

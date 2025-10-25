@@ -5,10 +5,14 @@
   "main": "api/index.ts",
   "scripts": {
     "start": "node api/index.ts",
-    "start:nodemon": "tsc && nodemon api/server.ts",
+    "start:nodemon": "tsc && nodemon api/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "tslint",
-    "start:dev": "nodemon"
+    "start:dev": "nodemon",
+    "dev": "ts-node api/index.ts"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "nodemonConfig": {
     "watch": [
@@ -16,7 +20,7 @@
       "api/"
     ],
     "ext": "ts",
-    "exec": "ts-node api/server.ts"
+    "exec": "ts-node api/index.ts"
   },
   "author": "",
   "license": "ISC",

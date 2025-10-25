@@ -39,7 +39,7 @@ const getOne = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = yield users_1.default.findById(userId);
         if (!user)
-            res.status(401).json({ error: 'Requête non authentifiée !' });
+            res.status(401).json('Requête non authentifiée !');
         if (user) {
             const userObject = user.toObject();
             const { password, _id } = userObject, restUser = __rest(userObject, ["password", "_id"]);

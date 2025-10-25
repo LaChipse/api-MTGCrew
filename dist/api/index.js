@@ -36,5 +36,8 @@ app.use('/auth', auth_1.default);
 app.use('/user', user_1.default);
 app.use('/deck', deck_1.default);
 app.use('/game', game_1.default);
+app.listen(3000, () => {
+    console.log(`Serveur démarré sur le port ${3000}`);
+});
 exports.default = app;
 //# sourceMappingURL=index.js.map
