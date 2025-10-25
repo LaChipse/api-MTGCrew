@@ -48,7 +48,7 @@ const getUserDeck = async (req, res) => {
 const getAll = async (req, res) => {
     try {
             const allDecks = await decks.find().sort({ nom: 1 })
-            const response = allDecks.map((deck) => (
+            const response = allDecks.map((deck:any) => (
             {
                 id: deck._id,
                 nom: deck.nom,

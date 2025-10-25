@@ -60,41 +60,47 @@ const all = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 .find({ 'config.userId': user._id.toString(), isStandard })
                 .sort({ date: -1 })
                 .limit(100);
-            const wins = lastHundredGames.reduce((acc, game) => {
-                if (isStandard) {
-                    const isWinner = game.victoire === user._id.toString() ? 1 : 0;
-                    return acc + isWinner;
-                }
-                else {
-                    const userConfig = Array.isArray(game.config)
-                        ? game.config.find((c) => c.userId === user._id.toString()) : null;
-                    if (!userConfig)
-                        return acc;
-                    const isWinner = game.victoire === userConfig.role ? 1 : 0;
-                    return acc + isWinner;
-                }
-            }, 0);
+            const wins = countWins(lastHundredGames, user._id.toString(), isStandard);
+            ;
             const formatLastHundredGames = () => {
-                if (lastHundredGames.length) {
-                    return lastHundredGames.length === 100 ? wins : Math.round((wins / lastHundredGames.length) * 100);
+                if (lastHundredGames.length > 0) {
+                    return lastHundredGames.length === 100
+                        ? wins
+                        : Math.round((wins / lastHundredGames.length) * 100);
                 }
                 return 0;
             };
-            return ({
-                id: user._id,
+            return {
+                id: user._id.toString(),
                 fullName: `${user.prenom} ${user.nom.charAt(0)}.`,
                 nbrDecks: user.nbrDecks,
                 partiesJouees: user.partiesJouees,
                 victoires: user.victoires,
                 hundredGameWins: formatLastHundredGames(),
-            });
+            };
         })));
         res.status(200).json(response);
     }
     catch (error) {
+        console.error(error);
         res.status(400).json('Erreur lors de la récupération des utilisateurs');
     }
 });
+const countWins = (games, userId, isStandard) => {
+    return games.reduce((acc, game) => {
+        if (isStandard) {
+            return acc + (game.victoire === userId ? 1 : 0);
+        }
+        else {
+            const userConfig = Array.isArray(game.config)
+                ? game.config.find((c) => c.userId === userId)
+                : null;
+            if (!userConfig)
+                return acc;
+            return acc + (game.victoire === userConfig.role ? 1 : 0);
+        }
+    }, 0);
+};
 //Récupere des utilisateurs et de leurs decks
 const getUsersWithDecks = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {

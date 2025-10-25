@@ -182,7 +182,7 @@ const getAll = async (req, res) => {
         .skip(20 * (page - 1))
         .limit(20)
 
-        const response = allGames.map((game) => (
+        const response = allGames.map((game: any) => (
             {
                 id: game._id,
                 date: game.date,

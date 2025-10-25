@@ -37,55 +37,64 @@ const all = async (req, res) => {
     const isStandard = req.params.type === 'true';
 
     try {
-        const allUsers = await users.find().sort({ prenom: 1 })
+        const allUsers = await users.find().sort({ prenom: 1 });
+
         const response = await Promise.all(
-            allUsers.map(async (user) => {
+            allUsers.map(async (user: any): Promise<{
+                id: string;
+                fullName: string;
+                nbrDecks: number;
+                partiesJouees: number;
+                victoires: number;
+                hundredGameWins: number;
+            }> => {
                 const lastHundredGames = await games
                     .find({ 'config.userId': user._id.toString(), isStandard })
                     .sort({ date: -1 })
                     .limit(100);
 
-                const wins = lastHundredGames.reduce((acc, game) => {
-                    if (isStandard) {
-                        const isWinner = game.victoire === user._id.toString() ? 1 : 0;
-                        return acc + isWinner;
-                    } else {
-                        const userConfig = Array.isArray(game.config)
-                        ? game.config.find((c) => c.userId === user._id.toString()) : null;
+                const wins = countWins(lastHundredGames as any, user._id.toString(), isStandard);;
 
-                        if (!userConfig) return acc;
-                        const isWinner = game.victoire === userConfig.role ? 1 : 0;
-                        return acc + isWinner;
+                const formatLastHundredGames = (): number => {
+                    if (lastHundredGames.length > 0) {
+                        return lastHundredGames.length === 100
+                            ? wins
+                            : Math.round((wins / lastHundredGames.length) * 100);
                     }
-                }, 0);
+                    return 0;
+                };
 
-                const formatLastHundredGames = () => {
-                    if (lastHundredGames.length) {
-                        return lastHundredGames.length === 100 ? wins : Math.round((wins / lastHundredGames.length) * 100)
-                    }
-
-                    return 0
-                }
-                
-
-                return (
-                    {
-                        id: user._id,
-                        fullName: `${user.prenom} ${user.nom.charAt(0)}.`,
-                        nbrDecks: user.nbrDecks,
-                        partiesJouees: user.partiesJouees,
-                        victoires: user.victoires,
-                        hundredGameWins: formatLastHundredGames(),
-                    }
-                )
+                return {
+                    id: user._id.toString(),
+                    fullName: `${user.prenom} ${user.nom.charAt(0)}.`,
+                    nbrDecks: user.nbrDecks,
+                    partiesJouees: user.partiesJouees,
+                    victoires: user.victoires,
+                    hundredGameWins: formatLastHundredGames(),
+                };
             })
-        )
+        );
 
-        res.status(200).json(response)
+        res.status(200).json(response);
     } catch (error) {
-        res.status(400).json('Erreur lors de la récupération des utilisateurs')
+        console.error(error);
+        res.status(400).json('Erreur lors de la récupération des utilisateurs');
     }
-}
+};
+
+const countWins = (games: Game[], userId: string, isStandard: boolean): number => {
+    return games.reduce<number>((acc, game) => {
+        if (isStandard) {
+            return acc + (game.victoire === userId ? 1 : 0);
+        } else {
+            const userConfig = Array.isArray(game.config)
+                ? (game.config as PlayersBlock[]).find((c) => c.userId === userId)
+                : null;
+            if (!userConfig) return acc;
+            return acc + (game.victoire === userConfig.role ? 1 : 0);
+        }
+    }, 0);
+};
 
 //Récupere des utilisateurs et de leurs decks
 const getUsersWithDecks = async (req, res) => {
