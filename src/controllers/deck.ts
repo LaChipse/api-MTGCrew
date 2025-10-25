@@ -47,20 +47,35 @@ const getUserDeck = async (req, res) => {
 // Récuperation des decks
 const getAll = async (req, res) => {
     try {
-        const allDecks = await decks.find().sort({ nom: 1 })
-        const response = allDecks.map((deck) => (
-        {
-            id: deck._id,
-            nom: deck.nom,
-            userId: deck.userId,
-        }
-    ))
+            const allDecks = await decks.find().sort({ nom: 1 })
+            const response = allDecks.map((deck) => (
+            {
+                id: deck._id,
+                nom: deck.nom,
+                userId: deck.userId,
+            }
+        ))
 
-    res.status(200).json(response)
+        res.status(200).json(response)
     } catch (e) {
         res.status(400).json('Erreur lors de la récupération des decks')
     }
-    
+}
+
+const getOne = async (req, res) => {
+    const deckId = req.params.id as string;
+
+    if (!ObjectId.isValid(deckId)) throw new Error('deckId invalide')
+    const objectDeckId = new ObjectId(deckId)
+
+    try {
+        const deck = await decks.findById(deckId);
+        if (!deck) res.status(404).json('Impossible de trouver le deck')
+
+        res.status(200).json(deck)
+    } catch (e) {
+        res.status(400).json('Erreur lors de la récupération du deck')
+    }
 }
 
 const getDeckIllustration = async (req, res) => {
@@ -153,4 +168,4 @@ const update = async (req, res) => {
         .catch(() => res.status(400).json('Erreur lors de la modification du deck'));
 }
 
-export default { getAll, getMine, add, softDelete, update, getUserDeck, getDeckIllustration };
+export default { getAll, getMine, add, softDelete, update, getUserDeck, getDeckIllustration, getOne };

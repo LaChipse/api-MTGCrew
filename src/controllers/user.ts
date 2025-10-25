@@ -17,11 +17,10 @@ const getOne = async (req, res) => {
     const userId = decodedToken.id;
     if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
     
-    
     try {
         const user = await users.findById(userId)
 
-        if (!user) res.status(401).json({ error: 'Requête non authentifiée !'})
+        if (!user) res.status(401).json('Requête non authentifiée !')
 
         if (user) {
             const userObject = user.toObject();
