@@ -56,6 +56,7 @@ const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             id: deck._id,
             nom: deck.nom,
             userId: deck.userId,
+            rank: deck.rank
         }));
         res.status(200).json(response);
     }

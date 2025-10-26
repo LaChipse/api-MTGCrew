@@ -53,6 +53,7 @@ const getAll = async (req, res) => {
                 id: deck._id,
                 nom: deck.nom,
                 userId: deck.userId,
+                rank: deck.rank
             }
         ))
 
