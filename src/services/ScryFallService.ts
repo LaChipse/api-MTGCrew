@@ -1,7 +1,7 @@
 import * as Scry from "scryfall-sdk";
 
 
-export default class Scryfall {
+export default class ScryfallService {
     constructor() {}
 
     /**

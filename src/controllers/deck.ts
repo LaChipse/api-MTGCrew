@@ -3,7 +3,7 @@ import decks from '../models/decks'
 import { ObjectId } from 'mongodb'
 import { config } from '../config/config';
 import users from '../models/users';
-import Scryfall from '../services/scryfall/ScryFall';
+import ScryfallService from '../services/ScryFallService';
 
 interface TokenPayload extends JwtPayload {
     id: string;
@@ -80,11 +80,11 @@ const getOne = async (req, res) => {
 
 const getDeckIllustration = async (req, res) => {
     const { fuzzyName } = req.query
-    const scryfall = new Scryfall
+    const scryfallService = new ScryfallService
 
     try {
-        const cardsByName = await scryfall.getCards( fuzzyName );
-        const imageUris = await scryfall.getIllustrationsCards(cardsByName.prints_search_uri)
+        const cardsByName = await scryfallService.getCards( fuzzyName );
+        const imageUris = await scryfallService.getIllustrationsCards(cardsByName.prints_search_uri)
 
         res.status(200).json({
             id: cardsByName.id,
@@ -122,6 +122,7 @@ const add = async (req, res) => {
 // Suppression d'un deck
 const softDelete = async (req, res) => {
     const deckId = req.query.id as string
+    if (!ObjectId.isValid(deckId)) throw new Error('deckId invalide')
 
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
@@ -130,8 +131,10 @@ const softDelete = async (req, res) => {
     if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
 
     const deck = await decks.findById(deckId)
+    if (!deck) res.status(404).json('Deck introuvable');
 
     if (deck.userId !== userId) res.status(401).json({ error: 'Requête non autorisée !'});
+    
     await decks.deleteOne({ _id: new ObjectId(deckId) })
         .then(async () => { 
             await users.updateOne(

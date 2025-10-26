@@ -16,7 +16,7 @@ export interface Game {
     config: Array<PlayersBlock>,
     victoire: string, 
     typeVictoire: string
-    isStandard: Boolean
+    isStandard: boolean
 }
 
 const gamesSchema = new mongoose.Schema({

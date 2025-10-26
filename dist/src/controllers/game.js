@@ -15,37 +15,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const mongodb_1 = require("mongodb");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = require("../config/config");
-const decks_1 = __importDefault(require("../models/decks"));
 const games_1 = __importDefault(require("../models/games"));
-const users_1 = __importDefault(require("../models/users"));
+const GameService_1 = __importDefault(require("../services/GameService"));
 // Récuperation de l'historique de mes parties
 const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
-    const page = Number(req.params.page) || 1;
-    const isStandard = req.params.type === 'true';
-    const { startDate, endDate, winnerId, victoryRole, typeOfVictory } = req.query;
-    const query = {
-        isStandard,
-    };
-    let sort = { date: -1 };
-    query.date = {
-        $gte: startDate ? new Date(startDate) : new Date(0),
-        $lte: endDate ? new Date(endDate) : new Date(),
-    };
-    if (victoryRole || winnerId) {
-        query.victoire = winnerId ? winnerId : victoryRole;
-    }
-    if (typeOfVictory)
-        query.typeVictoire = typeOfVictory;
+    const gameService = new GameService_1.default;
     const userId = decodedToken.id;
     if (!mongodb_1.ObjectId.isValid(userId))
         throw new Error('userId invalide');
+    const page = Number(req.params.page) || 1;
+    const isStandard = req.params.type === 'true';
+    const { query, sort } = gameService.getQuery(isStandard, req.query);
     try {
         const allGames = yield games_1.default.aggregate([
-            {
-                $match: Object.assign({ "config.userId": userId }, query)
-            },
+            { $match: Object.assign({ "config.userId": userId }, query) },
             { $sort: sort },
             { $skip: 10 * (page - 1) },
             { $limit: 10 }
@@ -69,31 +54,16 @@ const historyCount = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     var _a;
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
+    const gameService = new GameService_1.default;
     const userId = decodedToken.id;
     if (!mongodb_1.ObjectId.isValid(userId))
         throw new Error('userId invalide');
     const isStandard = req.params.type === 'true';
-    const { startDate, endDate, winnerId, victoryRole, typeOfVictory } = req.query;
-    const query = {
-        isStandard,
-    };
-    query.date = {
-        $gte: startDate ? new Date(startDate) : new Date(0),
-        $lte: endDate ? new Date(endDate) : new Date(),
-    };
-    if (victoryRole || winnerId) {
-        query.victoire = winnerId ? winnerId : victoryRole;
-    }
-    if (typeOfVictory)
-        query.typeVictoire = typeOfVictory;
+    const { query } = gameService.getQuery(isStandard, req.query);
     try {
         const countGames = yield games_1.default.aggregate([
-            {
-                $match: Object.assign({ "config.userId": userId }, query)
-            },
-            {
-                $count: "count"
-            }
+            { $match: Object.assign({ "config.userId": userId }, query) },
+            { $count: "count" }
         ]);
         res.status(200).json(((_a = countGames === null || countGames === void 0 ? void 0 : countGames[0]) === null || _a === void 0 ? void 0 : _a.count) || 0);
     }
@@ -104,28 +74,13 @@ const historyCount = (req, res) => __awaiter(void 0, void 0, void 0, function* (
 // Compte le nombre de parties
 const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _b;
+    const gameService = new GameService_1.default;
     const isStandard = req.params.type === 'true';
-    const { startDate, endDate, winnerId, victoryRole, typeOfVictory } = req.query;
-    const query = {
-        isStandard,
-    };
-    query.date = {
-        $gte: startDate ? new Date(startDate) : new Date(0),
-        $lte: endDate ? new Date(endDate) : new Date(),
-    };
-    if (victoryRole || winnerId) {
-        query.victoire = winnerId ? winnerId : victoryRole;
-    }
-    if (typeOfVictory)
-        query.typeVictoire = typeOfVictory;
+    const { query } = gameService.getQuery(isStandard, req.query);
     try {
         const countGames = yield games_1.default.aggregate([
-            {
-                $match: query
-            },
-            {
-                $count: "count"
-            }
+            { $match: query },
+            { $count: "count" }
         ]);
         res.status(200).json(((_b = countGames === null || countGames === void 0 ? void 0 : countGames[0]) === null || _b === void 0 ? void 0 : _b.count) || 0);
     }
@@ -135,25 +90,14 @@ const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 // Récuperation des parties
 const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const gameService = new GameService_1.default;
     const page = Number(req.params.page) || 1;
     const isStandard = req.params.type === 'true';
-    const { startDate, endDate, winnerId, victoryRole, typeOfVictory } = req.query;
-    const query = {
-        isStandard,
-    };
-    query.date = {
-        $gte: startDate ? new Date(startDate) : new Date(0),
-        $lte: endDate ? new Date(endDate) : new Date(),
-    };
-    if (victoryRole || winnerId) {
-        query.victoire = winnerId ? winnerId : victoryRole;
-    }
-    if (typeOfVictory)
-        query.typeVictoire = typeOfVictory;
+    const { query, sort } = gameService.getQuery(isStandard, req.query);
     try {
         const allGames = yield games_1.default
             .find(query)
-            .sort({ date: -1 })
+            .sort(sort)
             .skip(20 * (page - 1))
             .limit(20);
         const response = allGames.map((game) => ({
@@ -172,57 +116,36 @@ const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 // Ajout d'une partie
 const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    let winnersSpecial = [];
-    let winnersStandard = [];
-    let decksWinnersSpecial = [];
-    let decksWinnersStandard = [];
     const gameObject = req.body;
-    const { type, config: configGame, victoire, isStandard } = gameObject;
-    const tricheryRolVictory = (role) => {
-        if (victoire === 'Seigneur')
-            return role === victoire || role === 'Gardien';
-        return role === victoire;
-    };
-    const usersPlayer = [...new Set(configGame.map((conf) => conf.userId))];
-    const deckPlayer = [...new Set(configGame.map((conf) => conf.deckId))];
-    if (isStandard) {
-        if (type === 'each') {
-            winnersStandard = [victoire];
-            decksWinnersStandard = configGame.filter((conf) => conf.userId === victoire).map((winner) => winner.deckId);
-        }
-        else if (type === 'team') {
-            winnersStandard = configGame.filter((conf) => conf.team === victoire).map((winner) => winner.userId);
-            decksWinnersStandard = configGame.filter((conf) => conf.team === victoire).map((winner) => winner.deckId);
-        }
-        yield games_1.default.create(Object.assign({}, gameObject))
-            .then(() => __awaiter(void 0, void 0, void 0, function* () {
-            yield users_1.default.updateMany({ _id: { $in: [...new Set(usersPlayer)] } }, { $inc: { 'partiesJouees.standard': 1 } });
-            yield users_1.default.updateMany({ _id: { $in: [...new Set(winnersStandard)] } }, { $inc: { 'victoires.standard': 1 } });
-            yield decks_1.default.updateMany({ _id: { $in: [...new Set(deckPlayer)] } }, { $inc: { 'parties.standard': 1 } });
-            yield decks_1.default.updateMany({ _id: { $in: [...new Set(decksWinnersStandard)] } }, { $inc: { 'victoires.standard': 1 } });
-            res.status(200).json({ config: configGame, victoire });
-        }))
-            .catch(error => res.status(400).json('Erreur lors de la création de la partie'));
+    const { config, victoire, type, isStandard } = gameObject;
+    const gameService = new GameService_1.default;
+    try {
+        yield games_1.default.create(Object.assign({}, gameObject));
+        yield gameService.updateUserAndDeck(config, type, victoire, isStandard, 1);
+        res.status(200).json({ config, victoire });
     }
-    else {
-        if (type === 'treachery') {
-            winnersSpecial = configGame.filter((conf) => tricheryRolVictory(conf.role)).map((winner) => winner.userId);
-            decksWinnersSpecial = configGame.filter((conf) => tricheryRolVictory(conf.role)).map((winner) => winner.deckId);
-        }
-        else if (type === 'archenemy') {
-            winnersSpecial = configGame.filter((conf) => conf.role === victoire).map((winner) => winner.userId);
-            decksWinnersSpecial = configGame.filter((conf) => conf.role === victoire).map((winner) => winner.deckId);
-        }
-        yield games_1.default.create(Object.assign({}, gameObject))
-            .then(() => __awaiter(void 0, void 0, void 0, function* () {
-            yield users_1.default.updateMany({ _id: { $in: [...new Set(usersPlayer)] } }, { $inc: { 'partiesJouees.special': 1 } });
-            yield users_1.default.updateMany({ _id: { $in: [...new Set(winnersSpecial)] } }, { $inc: { 'victoires.special': 1 } });
-            yield decks_1.default.updateMany({ _id: { $in: [...new Set(deckPlayer)] } }, { $inc: { 'parties.special': 1 } });
-            yield decks_1.default.updateMany({ _id: { $in: [...new Set(decksWinnersSpecial)] } }, { $inc: { 'victoires.special': 1 } });
-            res.status(200).json({ config: configGame, victoire });
-        }))
-            .catch(error => res.status(400).json('Erreur lors de la création de la partie'));
+    catch (error) {
+        res.status(400).json('Erreur lors de la création de la partie');
     }
 });
-exports.default = { getAll, add, history, count, historyCount };
+// Suppression d'une partie
+const hardDelete = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const gameId = req.query.id;
+    if (!mongodb_1.ObjectId.isValid(gameId))
+        throw new Error('gameId invalide');
+    const gameService = new GameService_1.default;
+    try {
+        const game = yield games_1.default.findById(gameId);
+        if (!game)
+            res.status(404).json('Partie introuvable');
+        const { config, victoire, type, isStandard } = game;
+        yield games_1.default.deleteOne({ _id: new mongodb_1.ObjectId(gameId) });
+        yield gameService.updateUserAndDeck(config, type, victoire, isStandard, -1);
+        res.status(200).json({ id: game._id, type, config, victoire, typeVictoire: game.typeVictoire, isStandard });
+    }
+    catch (error) {
+        res.status(400).json('Erreur lors de la suppression de la partie');
+    }
+});
+exports.default = { getAll, add, history, count, historyCount, hardDelete };
 //# sourceMappingURL=game.js.map

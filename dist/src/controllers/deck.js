@@ -17,7 +17,7 @@ const decks_1 = __importDefault(require("../models/decks"));
 const mongodb_1 = require("mongodb");
 const config_1 = require("../config/config");
 const users_1 = __importDefault(require("../models/users"));
-const ScryFall_1 = __importDefault(require("../services/scryfall/ScryFall"));
+const ScryFallService_1 = __importDefault(require("../services/ScryFallService"));
 // Récuperation de mes decks
 const getMine = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
@@ -80,10 +80,10 @@ const getOne = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 const getDeckIllustration = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { fuzzyName } = req.query;
-    const scryfall = new ScryFall_1.default;
+    const scryfallService = new ScryFallService_1.default;
     try {
-        const cardsByName = yield scryfall.getCards(fuzzyName);
-        const imageUris = yield scryfall.getIllustrationsCards(cardsByName.prints_search_uri);
+        const cardsByName = yield scryfallService.getCards(fuzzyName);
+        const imageUris = yield scryfallService.getIllustrationsCards(cardsByName.prints_search_uri);
         res.status(200).json({
             id: cardsByName.id,
             name: cardsByName.name,
@@ -113,12 +113,16 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 // Suppression d'un deck
 const softDelete = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const deckId = req.query.id;
+    if (!mongodb_1.ObjectId.isValid(deckId))
+        throw new Error('deckId invalide');
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const userId = decodedToken.id;
     if (!mongodb_1.ObjectId.isValid(userId))
         throw new Error('userId invalide');
     const deck = yield decks_1.default.findById(deckId);
+    if (!deck)
+        res.status(404).json('Deck introuvable');
     if (deck.userId !== userId)
         res.status(401).json({ error: 'Requête non autorisée !' });
     yield decks_1.default.deleteOne({ _id: new mongodb_1.ObjectId(deckId) })
