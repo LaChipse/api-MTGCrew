@@ -47,6 +47,8 @@ const all = async (req, res) => {
                 partiesJouees: number;
                 victoires: number;
                 hundredGameWins: number;
+                colorStd: string;
+                colorSpec: string;
             }> => {
                 const lastHundredGames = await games
                     .find({ 'config.userId': user._id.toString(), isStandard })
@@ -71,6 +73,8 @@ const all = async (req, res) => {
                     partiesJouees: user.partiesJouees,
                     victoires: user.victoires,
                     hundredGameWins: formatLastHundredGames(),
+                    colorStd: user.colorStd,
+                    colorSpec: user.colorSpec,
                 };
             })
         );
@@ -134,7 +138,7 @@ const update = async (req, res) => {
     const userId = decodedToken.id;
     if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
 
-    const { nom, prenom, password } = req.body
+    const { nom, prenom, password, colorStd, colorSpec } = req.body
 
     try {
         if (password) {
@@ -158,11 +162,13 @@ const update = async (req, res) => {
                 $set: {
                     nom,
                     prenom,
+                    colorStd,
+                    colorSpec,
                 }
             }
         );
 
-        res.status(200).json({ nom, prenom })
+        res.status(200).json({ nom, prenom, colorStd, colorSpec })
     } catch (error) {
         res.status(400).json('Erreur lors de la modification de l\'utilisateur')
     }

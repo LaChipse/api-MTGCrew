@@ -8,7 +8,9 @@ export interface User {
     password: string
     nbrDecks: number,
     partiesJouees: PartiesTypes,
-    victoires: PartiesTypes
+    victoires: PartiesTypes,
+    colorStd: string,
+    colorSpec: string,
 }
 
 const usersSchema = new mongoose.Schema({
@@ -17,7 +19,9 @@ const usersSchema = new mongoose.Schema({
     password: String,
     nbrDecks: Number,
     partiesJouees: partiesTypes,
-    victoires: partiesTypes
+    victoires: partiesTypes,
+    colorStd: String,
+    colorSpec: String,
 });
 
 const users = mongoose.model('users', usersSchema);

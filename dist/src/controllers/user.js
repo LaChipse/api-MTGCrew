@@ -77,6 +77,8 @@ const all = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 partiesJouees: user.partiesJouees,
                 victoires: user.victoires,
                 hundredGameWins: formatLastHundredGames(),
+                colorStd: user.colorStd,
+                colorSpec: user.colorSpec,
             };
         })));
         res.status(200).json(response);
@@ -134,7 +136,7 @@ const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = decodedToken.id;
     if (!mongodb_1.ObjectId.isValid(userId))
         throw new Error('userId invalide');
-    const { nom, prenom, password } = req.body;
+    const { nom, prenom, password, colorStd, colorSpec } = req.body;
     try {
         if (password) {
             bcrypt_1.default.hash(password, 10)
@@ -151,9 +153,11 @@ const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             $set: {
                 nom,
                 prenom,
+                colorStd,
+                colorSpec,
             }
         });
-        res.status(200).json({ nom, prenom });
+        res.status(200).json({ nom, prenom, colorStd, colorSpec });
     }
     catch (error) {
         res.status(400).json('Erreur lors de la modification de l\'utilisateur');

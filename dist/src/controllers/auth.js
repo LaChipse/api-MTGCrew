@@ -44,7 +44,7 @@ const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 }, victoires: {
                     standard: 0,
                     special: 0
-                } }))
+                }, colorStd: '#27E9FF', colorSpec: '#fc79efff' }))
                 .then(() => { res.status(201).send('Profil enregistré !'); })
                 .catch(error => res.status(400).json({ error }));
         }))

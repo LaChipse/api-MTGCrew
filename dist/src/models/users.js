@@ -11,7 +11,9 @@ const usersSchema = new mongoose_1.default.Schema({
     password: String,
     nbrDecks: Number,
     partiesJouees: decks_1.partiesTypes,
-    victoires: decks_1.partiesTypes
+    victoires: decks_1.partiesTypes,
+    colorStd: String,
+    colorSpec: String,
 });
 const users = mongoose_1.default.model('users', usersSchema);
 exports.default = users;
