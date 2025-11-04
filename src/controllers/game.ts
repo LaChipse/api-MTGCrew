@@ -1,9 +1,7 @@
 import { ObjectId } from 'mongodb'
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { config } from '../config/config';
-import decks from '../models/decks';
-import games, { Game, PlayersBlock } from '../models/games';
-import users from '../models/users';
+import games, { Game } from '../models/games';
 import GameService from '../services/GameService';
 
 interface TokenPayload extends JwtPayload {
