@@ -35,9 +35,12 @@ const getOne = async (req, res) => {
 // Récupération des utilisateurs
 const all = async (req, res) => {
     const isStandard = req.params.type === 'true';
+    let sort: Record<string, -1 | 1> = { prenom : 1 }
+
+    if (req.query.sortKey) sort = { [req.query.sortKey]: req.query.sortDirection === '1' ? 1 : -1 };
 
     try {
-        const allUsers = await users.find().sort({ prenom: 1 });
+        const allUsers = await users.find().sort(sort);
 
         const response = await Promise.all(
             allUsers.map(async (user: any): Promise<{
@@ -126,7 +129,7 @@ const getUsersWithDecks = async (req, res) => {
 
         res.status(200).json(response)
     } catch (error) {
-        res.status(400).json('Erreur lors des decks et utilisateurs')
+        res.status(400).json('Erreur lors de la récupération des decks et utilisateurs')
     }
 }
 

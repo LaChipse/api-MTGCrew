@@ -53,8 +53,11 @@ const getOne = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 // Récupération des utilisateurs
 const all = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const isStandard = req.params.type === 'true';
+    let sort = { prenom: 1 };
+    if (req.query.sortKey)
+        sort = { [req.query.sortKey]: req.query.sortDirection === '1' ? 1 : -1 };
     try {
-        const allUsers = yield users_1.default.find().sort({ prenom: 1 });
+        const allUsers = yield users_1.default.find().sort(sort);
         const response = yield Promise.all(allUsers.map((user) => __awaiter(void 0, void 0, void 0, function* () {
             const lastHundredGames = yield games_1.default
                 .find({ 'config.userId': user._id.toString(), isStandard })
@@ -126,7 +129,7 @@ const getUsersWithDecks = (req, res) => __awaiter(void 0, void 0, void 0, functi
         res.status(200).json(response);
     }
     catch (error) {
-        res.status(400).json('Erreur lors des decks et utilisateurs');
+        res.status(400).json('Erreur lors de la récupération des decks et utilisateurs');
     }
 });
 // Mise à jour utilisateur

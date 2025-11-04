@@ -20,6 +20,9 @@ const users_1 = __importDefault(require("../models/users"));
 const ScryFallService_1 = __importDefault(require("../services/ScryFallService"));
 // Récuperation de mes decks
 const getMine = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    let sort = { nom: 1 };
+    if (req.query.sortKey)
+        sort = { [req.query.sortKey]: req.query.sortDirection === '1' ? 1 : -1 };
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const userId = decodedToken.id;
@@ -27,7 +30,7 @@ const getMine = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         throw new Error('userId invalide');
     const objectUserId = new mongodb_1.ObjectId(userId);
     try {
-        const mineDecks = yield decks_1.default.find({ userId: objectUserId }).sort({ nom: 1 });
+        const mineDecks = yield decks_1.default.find({ userId: objectUserId }).sort(sort);
         res.status(200).json(mineDecks);
     }
     catch (error) {
@@ -37,11 +40,14 @@ const getMine = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 // Récuperation des decks d'un joueur
 const getUserDeck = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = req.params.id;
+    let sort = { nom: 1 };
+    if (req.query.sortKey)
+        sort = { [req.query.sortKey]: req.query.sortDirection === '1' ? 1 : -1 };
     if (!mongodb_1.ObjectId.isValid(userId))
         throw new Error('userId invalide');
     const objectUserId = new mongodb_1.ObjectId(userId);
     try {
-        const userDecks = yield decks_1.default.find({ userId: objectUserId }).sort({ nom: 1 });
+        const userDecks = yield decks_1.default.find({ userId: objectUserId }).sort(sort);
         res.status(200).json(userDecks);
     }
     catch (error) {

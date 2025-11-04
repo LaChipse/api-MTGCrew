@@ -11,15 +11,20 @@ interface TokenPayload extends JwtPayload {
 
 // Récuperation de mes decks
 const getMine = async (req, res) => {
-        const token = req.headers.authorization.split(' ')[1];
-        const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
+    let sort: Record<string, -1 | 1> = { nom : 1 }
 
-        const userId = decodedToken.id;
+    if (req.query.sortKey) sort = { [req.query.sortKey]: req.query.sortDirection === '1' ? 1 : -1 };
 
-        if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
-        const objectUserId = new ObjectId(userId)
+    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
+
+    const userId = decodedToken.id;
+
+    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
+    const objectUserId = new ObjectId(userId)
+
     try {
-        const mineDecks = await decks.find({ userId: objectUserId }).sort({ nom: 1 })
+        const mineDecks = await decks.find({ userId: objectUserId }).sort(sort)
 
         res.status(200).json(mineDecks)
     } catch (error) {
@@ -31,12 +36,15 @@ const getMine = async (req, res) => {
 // Récuperation des decks d'un joueur
 const getUserDeck = async (req, res) => {
     const userId = req.params.id as string;
+    let sort: Record<string, -1 | 1> = { nom : 1 }
+
+    if (req.query.sortKey) sort = { [req.query.sortKey]: req.query.sortDirection === '1' ? 1 : -1 };
 
     if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
     const objectUserId = new ObjectId(userId)
 
     try {
-        const userDecks = await decks.find({ userId: objectUserId }).sort({ nom: 1 })
+        const userDecks = await decks.find({ userId: objectUserId }).sort(sort)
     
         res.status(200).json(userDecks)
     } catch (error) {
