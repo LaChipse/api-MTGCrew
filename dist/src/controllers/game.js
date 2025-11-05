@@ -73,7 +73,7 @@ const historyCount = (req, res) => __awaiter(void 0, void 0, void 0, function* (
 });
 // Compte le nombre de parties
 const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _b;
+    var _a;
     const gameService = new GameService_1.default;
     const isStandard = req.params.type === 'true';
     const { query } = gameService.getQuery(isStandard, req.query);
@@ -82,7 +82,7 @@ const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             { $match: query },
             { $count: "count" }
         ]);
-        res.status(200).json(((_b = countGames === null || countGames === void 0 ? void 0 : countGames[0]) === null || _b === void 0 ? void 0 : _b.count) || 0);
+        res.status(200).json(((_a = countGames === null || countGames === void 0 ? void 0 : countGames[0]) === null || _a === void 0 ? void 0 : _a.count) || 0);
     }
     catch (error) {
         res.status(400).json('Erreur lors du decompte des parties');
