@@ -42,12 +42,14 @@ export default class ScryfallService {
                     {
                         imageUrlSmall: cf.image_uris.small,
                         imageUrlNormal: cf.image_uris.normal,
+                        imageArt: cf.image_uris.art_crop
                     }
                 ))
             } else {
                 return {
                     imageUrlSmall: d.image_uris.small,
-                    imageUrlNormal: d.image_uris.normal
+                    imageUrlNormal: d.image_uris.normal,
+                    imageArt: d.image_uris.art_crop
                 }
             }
         })

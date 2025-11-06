@@ -55,13 +55,15 @@ const getUserDeck = async (req, res) => {
 // Récuperation des decks
 const getAll = async (req, res) => {
     try {
-            const allDecks = await decks.find().sort({ nom: 1 })
+            const allDecks = await decks.find().sort({ nom: 1 });
             const response = allDecks.map((deck:any) => (
             {
                 id: deck._id,
                 nom: deck.nom,
                 userId: deck.userId,
-                rank: deck.rank
+                rank: deck.rank,
+                imageUrl: deck.illustrationUrl,
+                imageArt: deck.imageArt
             }
         ))
 

@@ -14,6 +14,7 @@ export interface Deck {
     _id: ObjectId,
     nom: string,
     illustrationUrl: string,
+    imageArt: string,
     userId: string,
     couleurs: Array<string>,
     type?: string, 
@@ -26,6 +27,7 @@ export interface Deck {
 const decksSchema = new mongoose.Schema({
     nom: String,
     illustrationUrl: String,
+    imageArt: String,
     userId: String,
     couleurs: Array<String>,
     type: String, 

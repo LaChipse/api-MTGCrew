@@ -12,6 +12,7 @@ exports.partiesTypes = {
 const decksSchema = new mongoose_1.default.Schema({
     nom: String,
     illustrationUrl: String,
+    imageArt: String,
     userId: String,
     couleurs: (Array),
     type: String,

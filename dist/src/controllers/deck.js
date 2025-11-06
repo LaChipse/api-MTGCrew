@@ -62,7 +62,9 @@ const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             id: deck._id,
             nom: deck.nom,
             userId: deck.userId,
-            rank: deck.rank
+            rank: deck.rank,
+            imageUrl: deck.illustrationUrl,
+            imageArt: deck.imageArt
         }));
         res.status(200).json(response);
     }
