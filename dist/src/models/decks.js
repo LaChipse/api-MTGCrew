@@ -19,7 +19,8 @@ const decksSchema = new mongoose_1.default.Schema({
     parties: exports.partiesTypes,
     victoires: exports.partiesTypes,
     isImprime: Boolean,
-    rank: Number
+    rank: Number,
+    elo: Number
 });
 const decks = mongoose_1.default.model('decks', decksSchema);
 exports.default = decks;

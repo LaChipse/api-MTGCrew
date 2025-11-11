@@ -117,11 +117,11 @@ const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 // Ajout d'une partie
 const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const gameObject = req.body;
-    const { config, victoire, type, isStandard } = gameObject;
+    const { config, victoire, type, isStandard, isRanked } = gameObject;
     const gameService = new GameService_1.default;
     try {
         yield games_1.default.create(Object.assign({}, gameObject));
-        yield gameService.updateUserAndDeck(config, type, victoire, isStandard, 1);
+        yield gameService.updateUserAndDeck(config, type, victoire, isStandard, isRanked, 1);
         res.status(200).json({ config, victoire });
     }
     catch (error) {
@@ -138,9 +138,9 @@ const hardDelete = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         const game = yield games_1.default.findById(gameId);
         if (!game)
             res.status(404).json('Partie introuvable');
-        const { config, victoire, type, isStandard } = game;
+        const { config, victoire, type, isStandard, isRanked } = game;
         yield games_1.default.deleteOne({ _id: new mongodb_1.ObjectId(gameId) });
-        yield gameService.updateUserAndDeck(config, type, victoire, isStandard, -1);
+        yield gameService.updateUserAndDeck(config, type, victoire, isStandard, isRanked, -1);
         res.status(200).json({ id: game._id, type, config, victoire, typeVictoire: game.typeVictoire, isStandard });
     }
     catch (error) {

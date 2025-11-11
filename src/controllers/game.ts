@@ -133,13 +133,13 @@ const getAll = async (req, res) => {
 // Ajout d'une partie
 const add = async (req, res) => {
     const gameObject = req.body as Game;
-    const { config, victoire, type, isStandard } = gameObject
+    const { config, victoire, type, isStandard, isRanked } = gameObject
 
     const gameService = new GameService
 
     try {
         await games.create({...gameObject})
-        await gameService.updateUserAndDeck(config, type, victoire, isStandard, 1)
+        await gameService.updateUserAndDeck(config, type, victoire, isStandard, isRanked, 1)
 
         res.status(200).json({ config, victoire })
     } catch (error) {
@@ -159,10 +159,10 @@ const hardDelete = async (req, res) => {
         const game = await games.findById(gameId)
         if (!game) res.status(404).json('Partie introuvable');
 
-        const { config, victoire, type, isStandard } = game
+        const { config, victoire, type, isStandard, isRanked } = game
 
         await games.deleteOne({ _id: new ObjectId(gameId) })
-        await gameService.updateUserAndDeck(config, type, victoire, isStandard, -1)
+        await gameService.updateUserAndDeck(config, type, victoire, isStandard, isRanked, -1)
 
         res.status(200).json({ id: game._id, type, config, victoire, typeVictoire: game.typeVictoire, isStandard })
     } catch (error) {

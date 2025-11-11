@@ -46,9 +46,10 @@ export default class GameService {
      * @param {tring} type - Type de partie
      * @param {tring} victoire - Qui a gagné
      * @param {boolean} isStandard - Sommes nous en standard ?
+     * @param {boolen} isRanked - Est-elle classée ?
      * @param {number} incr - Type d'incrémentation
      */
-    public async updateUserAndDeck(config: Array<PlayersBlock>, type: string, victoire: string, isStandard: boolean, incr: -1 | 1) {
+    public async updateUserAndDeck(config: Array<PlayersBlock>, type: string, victoire: string, isStandard: boolean, isRanked: boolean, incr: -1 | 1) {
         const usersIds = (config).map((c) => c.userId)
         const decksIds = (config).map((c) => c.deckId)
 
@@ -64,12 +65,18 @@ export default class GameService {
         
         await decks.updateMany(
             { _id: { $in: decksIds }},
-            { $inc: isStandard ? { 'parties.standard': incr } : { 'parties.special': incr } }
+            { $inc: {
+                elo: isRanked ? -(incr) : 0,
+                ...(isStandard ? { 'parties.standard': incr } : { 'parties.special': incr })
+            }},
         );
 
         await decks.updateMany(
             { _id: { $in: this.victoryIds('deckId', type, victoire, config) } },
-            {  $inc: isStandard ? { 'victoires.standard': incr } : { 'victoires.special': incr } }
+            {  $inc: {
+                elo: isRanked ? (incr * 2) : 0,
+                ...(isStandard ? { 'victoires.standard': incr } : { 'victoires.special': incr })
+            }},
         );
     }
 

@@ -43,16 +43,17 @@ class GameService {
      * @param {tring} type - Type de partie
      * @param {tring} victoire - Qui a gagné
      * @param {boolean} isStandard - Sommes nous en standard ?
+     * @param {boolen} isRanked - Est-elle classée ?
      * @param {number} incr - Type d'incrémentation
      */
-    updateUserAndDeck(config, type, victoire, isStandard, incr) {
+    updateUserAndDeck(config, type, victoire, isStandard, isRanked, incr) {
         return __awaiter(this, void 0, void 0, function* () {
             const usersIds = (config).map((c) => c.userId);
             const decksIds = (config).map((c) => c.deckId);
             yield users_1.default.updateMany({ _id: { $in: usersIds } }, { $inc: isStandard ? { 'partiesJouees.standard': incr } : { 'partiesJouees.special': incr } });
             yield users_1.default.updateMany({ _id: { $in: this.victoryIds('userId', type, victoire, config) } }, { $inc: isStandard ? { 'victoires.standard': incr } : { 'victoires.special': incr } });
-            yield decks_1.default.updateMany({ _id: { $in: decksIds } }, { $inc: isStandard ? { 'parties.standard': incr } : { 'parties.special': incr } });
-            yield decks_1.default.updateMany({ _id: { $in: this.victoryIds('deckId', type, victoire, config) } }, { $inc: isStandard ? { 'victoires.standard': incr } : { 'victoires.special': incr } });
+            yield decks_1.default.updateMany({ _id: { $in: decksIds } }, { $inc: Object.assign({ elo: isRanked ? -(incr) : 0 }, (isStandard ? { 'parties.standard': incr } : { 'parties.special': incr })) });
+            yield decks_1.default.updateMany({ _id: { $in: this.victoryIds('deckId', type, victoire, config) } }, { $inc: Object.assign({ elo: isRanked ? (incr * 2) : 0 }, (isStandard ? { 'victoires.standard': incr } : { 'victoires.special': incr })) });
         });
     }
     victoryIds(userOrDeck, type, victoire, config) {

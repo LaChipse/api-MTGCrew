@@ -54,14 +54,27 @@ const getUserDeck = async (req, res) => {
 
 // Récuperation des decks
 const getAll = async (req, res) => {
+    const { rank } = req.query;
+
+    let sort: Record<string, -1 | 1> = { nom : 1 }
+    const query: Record<string, unknown> = {};
+
+    if (req.query.sortKey) sort = { [req.query.sortKey]: req.query.sortDirection === '1' ? 1 : -1, nom: 1 };
+    if (rank) query.rank = rank;
+
     try {
-            const allDecks = await decks.find().sort({ nom: 1 });
+            const allDecks = await decks.find(query).sort(sort);
             const response = allDecks.map((deck:any) => (
             {
                 id: deck._id,
                 nom: deck.nom,
                 userId: deck.userId,
                 rank: deck.rank,
+                elo: deck.elo,
+                games: {
+                    standard: deck.parties.standard,
+                    spec: deck.parties.special,
+                },
                 imageUrl: deck.illustrationUrl,
                 imageArt: deck.imageArt
             }
@@ -118,7 +131,7 @@ const add = async (req, res) => {
     const userId = decodedToken.id;
     if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
     
-    await decks.create({...deckObject, userId: new ObjectId(userId), parties: {standard: 0, special: 0}, victoires: {standard: 0, special: 0}})
+    await decks.create({...deckObject, userId: new ObjectId(userId), parties: {standard: 0, special: 0}, victoires: {standard: 0, special: 0}, elo: 0})
         .then(async () => { 
             await users.updateOne(
                 { _id: new ObjectId(userId) },

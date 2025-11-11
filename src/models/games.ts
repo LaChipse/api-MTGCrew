@@ -10,13 +10,14 @@ export interface PlayersBlock {
 }   
 
 export interface Game {
-    _id: ObjectId,
-    date?: Date,
-    type: string,
-    config: Array<PlayersBlock>,
-    victoire: string, 
+    _id: ObjectId
+    date?: Date
+    type: string
+    config: Array<PlayersBlock>
+    victoire: string
     typeVictoire: string
     isStandard: boolean
+    isRanked: boolean
 }
 
 const gamesSchema = new mongoose.Schema({
@@ -25,7 +26,8 @@ const gamesSchema = new mongoose.Schema({
     config: Array<PlayersBlock>,
     victoire: String, 
     typeVictoire: String,
-    isStandard: Boolean
+    isStandard: Boolean,
+    isRanked: Boolean
 });
 
 const games = mongoose.model('games', gamesSchema);

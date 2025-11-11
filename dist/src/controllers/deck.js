@@ -56,13 +56,25 @@ const getUserDeck = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 });
 // Récuperation des decks
 const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { rank } = req.query;
+    let sort = { nom: 1 };
+    const query = {};
+    if (req.query.sortKey)
+        sort = { [req.query.sortKey]: req.query.sortDirection === '1' ? 1 : -1, nom: 1 };
+    if (rank)
+        query.rank = rank;
     try {
-        const allDecks = yield decks_1.default.find().sort({ nom: 1 });
+        const allDecks = yield decks_1.default.find(query).sort(sort);
         const response = allDecks.map((deck) => ({
             id: deck._id,
             nom: deck.nom,
             userId: deck.userId,
             rank: deck.rank,
+            elo: deck.elo,
+            games: {
+                standard: deck.parties.standard,
+                spec: deck.parties.special,
+            },
             imageUrl: deck.illustrationUrl,
             imageArt: deck.imageArt
         }));
@@ -112,7 +124,7 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = decodedToken.id;
     if (!mongodb_1.ObjectId.isValid(userId))
         throw new Error('userId invalide');
-    yield decks_1.default.create(Object.assign(Object.assign({}, deckObject), { userId: new mongodb_1.ObjectId(userId), parties: { standard: 0, special: 0 }, victoires: { standard: 0, special: 0 } }))
+    yield decks_1.default.create(Object.assign(Object.assign({}, deckObject), { userId: new mongodb_1.ObjectId(userId), parties: { standard: 0, special: 0 }, victoires: { standard: 0, special: 0 }, elo: 0 }))
         .then(() => __awaiter(void 0, void 0, void 0, function* () {
         yield users_1.default.updateOne({ _id: new mongodb_1.ObjectId(userId) }, { $inc: { nbrDecks: 1 } });
         res.status(200).json('deck ajouté');
