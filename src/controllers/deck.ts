@@ -89,11 +89,10 @@ const getAll = async (req, res) => {
 
 const updateRank = async(req, res) => {
     const deckService = new DeckService
-    const { rank } = req.body
 
     try {
-        const result = await deckService.updateRank(rank)
-        res.status(204).json({modifiedDeck: result})
+        const result = await deckService.updateRank()
+        res.status(204).json({ modifiedDeck: result })
     } catch (error) {
         res.status(400).json('Erreur lors de la msie a jour des ranks')
     }
