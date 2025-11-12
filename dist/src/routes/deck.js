@@ -17,6 +17,7 @@ router.put('/update', auth_1.auth, deck_1.default.update);
 router.get('/all', deck_1.default.getAll);
 router.get('/user/:id', deck_1.default.getUserDeck);
 router.get('/:id', deck_1.default.getOne);
+router.put('/updateRank', deck_1.default.updateRank);
 //Exportation
 exports.default = router;
 //# sourceMappingURL=deck.js.map

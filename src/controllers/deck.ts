@@ -4,6 +4,7 @@ import { ObjectId } from 'mongodb'
 import { config } from '../config/config';
 import users from '../models/users';
 import ScryfallService from '../services/ScryFallService';
+import DeckService from '../services/DeckService';
 
 interface TokenPayload extends JwtPayload {
     id: string;
@@ -83,6 +84,18 @@ const getAll = async (req, res) => {
         res.status(200).json(response)
     } catch (e) {
         res.status(400).json('Erreur lors de la récupération des decks')
+    }
+}
+
+const updateRank = async(req, res) => {
+    const deckService = new DeckService
+    const { rank } = req.body
+
+    try {
+        const result = await deckService.updateRank(rank)
+        res.status(204).json({modifiedDeck: result})
+    } catch (error) {
+        res.status(400).json('Erreur lors de la msie a jour des ranks')
     }
 }
 
@@ -190,9 +203,9 @@ const update = async (req, res) => {
         { $set: { ...deckObject } }
     )
         .then(async () => { 
-            res.status(200).json('deck modifié')
+            res.status(200).json('Deck modifié')
         })
         .catch(() => res.status(400).json('Erreur lors de la modification du deck'));
 }
 
-export default { getAll, getMine, add, softDelete, update, getUserDeck, getDeckIllustration, getOne };
+export default { getAll, getMine, add, softDelete, update, getUserDeck, getDeckIllustration, getOne, updateRank };

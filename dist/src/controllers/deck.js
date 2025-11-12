@@ -18,6 +18,7 @@ const mongodb_1 = require("mongodb");
 const config_1 = require("../config/config");
 const users_1 = __importDefault(require("../models/users"));
 const ScryFallService_1 = __importDefault(require("../services/ScryFallService"));
+const DeckService_1 = __importDefault(require("../services/DeckService"));
 // Récuperation de mes decks
 const getMine = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     let sort = { nom: 1 };
@@ -82,6 +83,17 @@ const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
     catch (e) {
         res.status(400).json('Erreur lors de la récupération des decks');
+    }
+});
+const updateRank = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const deckService = new DeckService_1.default;
+    const { rank } = req.body;
+    try {
+        const result = yield deckService.updateRank(rank);
+        res.status(204).json({ modifiedDeck: result });
+    }
+    catch (error) {
+        res.status(400).json('Erreur lors de la msie a jour des ranks');
     }
 });
 const getOne = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -166,9 +178,9 @@ const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         res.status(401).json({ error: 'Requête non autorisée !' });
     yield decks_1.default.updateOne({ _id: new mongodb_1.ObjectId(deckObject.id) }, { $set: Object.assign({}, deckObject) })
         .then(() => __awaiter(void 0, void 0, void 0, function* () {
-        res.status(200).json('deck modifié');
+        res.status(200).json('Deck modifié');
     }))
         .catch(() => res.status(400).json('Erreur lors de la modification du deck'));
 });
-exports.default = { getAll, getMine, add, softDelete, update, getUserDeck, getDeckIllustration, getOne };
+exports.default = { getAll, getMine, add, softDelete, update, getUserDeck, getDeckIllustration, getOne, updateRank };
 //# sourceMappingURL=deck.js.map

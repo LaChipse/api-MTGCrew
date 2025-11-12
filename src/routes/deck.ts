@@ -14,6 +14,7 @@ router.put('/update', auth, deckCtrl.update);
 router.get('/all', deckCtrl.getAll);
 router.get('/user/:id', deckCtrl.getUserDeck);
 router.get('/:id', deckCtrl.getOne);
+router.put('/updateRank', deckCtrl.updateRank)
 
 //Exportation
 export default router;

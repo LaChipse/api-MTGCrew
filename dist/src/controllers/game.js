@@ -17,6 +17,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = require("../config/config");
 const games_1 = __importDefault(require("../models/games"));
 const GameService_1 = __importDefault(require("../services/GameService"));
+const DeckService_1 = __importDefault(require("../services/DeckService"));
 // Récuperation de l'historique de mes parties
 const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
@@ -119,9 +120,11 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const gameObject = req.body;
     const { config, victoire, type, isStandard, isRanked } = gameObject;
     const gameService = new GameService_1.default;
+    const deckService = new DeckService_1.default;
     try {
         yield games_1.default.create(Object.assign({}, gameObject));
         yield gameService.updateUserAndDeck(config, type, victoire, isStandard, isRanked, 1);
+        // await deckService.updateRank()
         res.status(200).json({ config, victoire });
     }
     catch (error) {

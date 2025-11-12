@@ -3,6 +3,7 @@ import jwt, { JwtPayload } from 'jsonwebtoken';
 import { config } from '../config/config';
 import games, { Game } from '../models/games';
 import GameService from '../services/GameService';
+import DeckService from '../services/DeckService';
 
 interface TokenPayload extends JwtPayload {
     id: string;
@@ -136,10 +137,12 @@ const add = async (req, res) => {
     const { config, victoire, type, isStandard, isRanked } = gameObject
 
     const gameService = new GameService
+    const deckService = new DeckService
 
     try {
         await games.create({...gameObject})
         await gameService.updateUserAndDeck(config, type, victoire, isStandard, isRanked, 1)
+        // await deckService.updateRank()
 
         res.status(200).json({ config, victoire })
     } catch (error) {
