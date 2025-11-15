@@ -5,6 +5,7 @@ import { config } from '../config/config';
 import users from '../models/users';
 import ScryfallService from '../services/ScryFallService';
 import DeckService from '../services/DeckService';
+import journals from '../models/journal';
 
 interface TokenPayload extends JwtPayload {
     id: string;
@@ -27,9 +28,9 @@ const getMine = async (req, res) => {
     try {
         const mineDecks = await decks.find({ userId: objectUserId }).sort(sort)
 
-        res.status(200).json(mineDecks)
+        return res.status(200).json(mineDecks)
     } catch (error) {
-        res.status(400).json('Erreur lors de la récupération des decks')
+        return res.status(400).json('Erreur lors de la récupération des decks')
     }
     
 }
@@ -47,9 +48,9 @@ const getUserDeck = async (req, res) => {
     try {
         const userDecks = await decks.find({ userId: objectUserId }).sort(sort)
     
-        res.status(200).json(userDecks)
+        return res.status(200).json(userDecks)
     } catch (error) {
-        res.status(400).json('Erreur lors de la récupération du deck du joueur')
+        return res.status(400).json('Erreur lors de la récupération du deck du joueur')
     }
 }
 
@@ -81,20 +82,42 @@ const getAll = async (req, res) => {
             }
         ))
 
-        res.status(200).json(response)
+        return res.status(200).json(response)
     } catch (e) {
-        res.status(400).json('Erreur lors de la récupération des decks')
+        return res.status(400).json('Erreur lors de la récupération des decks')
     }
 }
 
+//Mise à jour des ranks
 const updateRank = async(req, res) => {
     const deckService = new DeckService
 
+    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
+
+    const userId = decodedToken.id;
+
+    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
+
     try {
         const result = await deckService.updateRank()
-        res.status(204).json({ modifiedDeck: result })
+
+        await journals.create({
+            idUser: userId,
+            body: {userId},
+            action: 'Mise à jour des ranks',
+            date: new Date()
+        });
+
+        return res.status(204).json({ modifiedDeck: result })
     } catch (error) {
-        res.status(400).json('Erreur lors de la msie a jour des ranks')
+        await journals.create({
+            idUser: userId,
+            body: {error},
+            action: 'Mise à jour des ranks',
+            date: new Date()
+        });
+        return res.status(400).json('Erreur lors de la msie a jour des ranks')
     }
 }
 
@@ -108,9 +131,9 @@ const getOne = async (req, res) => {
         const deck = await decks.findById(deckId);
         if (!deck) res.status(404).json('Impossible de trouver le deck')
 
-        res.status(200).json(deck)
+        return res.status(200).json(deck)
     } catch (e) {
-        res.status(400).json('Erreur lors de la récupération du deck')
+        return res.status(400).json('Erreur lors de la récupération du deck')
     }
 }
 
@@ -122,21 +145,21 @@ const getDeckIllustration = async (req, res) => {
         const cardsByName = await scryfallService.getCards( fuzzyName );
         const imageUris = await scryfallService.getIllustrationsCards(cardsByName.prints_search_uri)
 
-        res.status(200).json({
+        return res.status(200).json({
             id: cardsByName.id,
             name: cardsByName.name,
             lang: cardsByName.lang,
             imageUris,
         })
     } catch (e) {
-        res.status(404).json('Nom imprécis. Veuillez affiner votre recherche')
+        return res.status(404).json('Nom imprécis. Veuillez affiner votre recherche')
     }
 }
 
 // Ajout d'un deck
 const add = async (req, res) => {
     const deckObject = req.body;
-    
+
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
 
@@ -149,10 +172,24 @@ const add = async (req, res) => {
                 { _id: new ObjectId(userId) },
                 { $inc: { nbrDecks: 1 } }
             );
+
+            await journals.create({
+                idUser: userId,
+                body: {...deckObject},
+                action: 'Ajout d\'un deck',
+                date: new Date()
+            });
             
-            res.status(200).json('deck ajouté')
+            return res.status(200).json('deck ajouté')
         })
-        .catch(() => res.status(400).json('Erreur lors de l\'ajout du deck'));
+        .catch(async (error) => {
+            await journals.create({
+                body: {error},
+                action: 'Ajout d\'un deck',
+                date: new Date()
+            });
+            return res.status(400).json('Erreur lors de l\'ajout du deck')
+        });
 }
 
 // Suppression d'un deck
@@ -177,10 +214,25 @@ const softDelete = async (req, res) => {
                 { _id: new ObjectId(userId) },
                 { $inc: { nbrDecks: -1 } }
             );
+
+            await journals.create({
+                idUser: userId,
+                body: {...deck},
+                action: 'Suppression d\'un deck',
+                date: new Date()
+            });
             
-            res.status(200).json('Deck supprimé')
+            return res.status(200).json('Deck supprimé')
         })
-        .catch(() => res.status(400).json('Erreur lors de la suppression du deck'));
+        .catch(async (error) => {
+            await journals.create({
+                idUser: userId,
+                body: {error},
+                action: 'Suppression d\'un deck',
+                date: new Date()
+            });
+            return res.status(400).json('Erreur lors de la suppression du deck')
+        });
 }
 
 // Modification d'un deck
@@ -202,7 +254,7 @@ const update = async (req, res) => {
         { $set: { ...deckObject } }
     )
         .then(async () => { 
-            res.status(200).json('Deck modifié')
+            return res.status(200).json('Deck modifié')
         })
         .catch(() => res.status(400).json('Erreur lors de la modification du deck'));
 }

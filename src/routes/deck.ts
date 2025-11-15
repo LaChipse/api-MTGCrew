@@ -8,13 +8,13 @@ const router = express.Router();
 //Routes User
 router.get('/mine', auth, deckCtrl.getMine);
 router.get('/getCardByName', deckCtrl.getDeckIllustration)
-router.post('/add', deckCtrl.add);
+router.post('/add', auth, deckCtrl.add);
 router.delete('/delete', auth, deckCtrl.softDelete);
 router.put('/update', auth, deckCtrl.update);
+router.put('/updateRank', auth, deckCtrl.updateRank)
 router.get('/all', deckCtrl.getAll);
 router.get('/user/:id', deckCtrl.getUserDeck);
 router.get('/:id', deckCtrl.getOne);
-router.put('/updateRank', deckCtrl.updateRank)
 
 //Exportation
 export default router;

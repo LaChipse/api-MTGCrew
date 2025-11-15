@@ -15,38 +15,23 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const decks_1 = __importDefault(require("../models/decks"));
 class DeckService {
     constructor() { }
-    /**
-     * @param {number} rank - Rank du deck
-     */
-    updateRank(rank) {
+    updateRank() {
         return __awaiter(this, void 0, void 0, function* () {
-            let filterUp = { $lt: 5, $ne: 0 };
-            let filterDown = { $gt: 1, $ne: 0 };
-            if (rank) {
-                filterUp = { $eq: rank };
-                filterDown = { $eq: rank };
-            }
-            if ((rank && rank <= 5) || !rank) {
-                const result = yield decks_1.default.updateMany({
-                    rank: filterUp,
-                    elo: { $gte: 5 }
-                }, {
-                    $set: { elo: 0 },
-                    $inc: { rank: 1 }
-                });
-                return result.modifiedCount;
-            }
-            if ((rank && rank >= 1) || !rank) {
-                const result = yield decks_1.default.updateMany({
-                    rank: filterDown,
-                    elo: { $lte: -5 }
-                }, {
-                    $set: { elo: 0 },
-                    $inc: { rank: -1 }
-                });
-                return result.modifiedCount;
-            }
-            return 0;
+            const resultUp = yield decks_1.default.updateMany({
+                rank: { $lt: 5, $ne: 0 },
+                elo: { $gte: 5 }
+            }, {
+                $set: { elo: 0 },
+                $inc: { rank: 1 }
+            });
+            const resultDown = yield decks_1.default.updateMany({
+                rank: { $gt: 1, $ne: 0 },
+                elo: { $lte: -5 }
+            }, {
+                $set: { elo: 0 },
+                $inc: { rank: -1 }
+            });
+            return resultDown.modifiedCount + resultUp.modifiedCount;
         });
     }
 }

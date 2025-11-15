@@ -4,6 +4,7 @@ import { config } from '../config/config';
 import games, { Game } from '../models/games';
 import GameService from '../services/GameService';
 import DeckService from '../services/DeckService';
+import journals from '../models/journal';
 
 interface TokenPayload extends JwtPayload {
     id: string;
@@ -44,9 +45,9 @@ const history = async (req, res) => {
             }
         ))
 
-        res.status(200).json(response)
+        return res.status(200).json(response)
     } catch (error) {
-        res.status(400).json('Erreur lors de la récupération des parties')
+        return res.status(400).json('Erreur lors de la récupération des parties')
     }
     
 }
@@ -66,16 +67,16 @@ const historyCount = async (req, res) => {
 
     try {
         const countGames = await games.aggregate([
-        { $match: {
-                "config.userId": userId,
-                ...query
-        }},
-        { $count:"count" }
-    ])
+            { $match: {
+                    "config.userId": userId,
+                    ...query
+            }},
+            { $count:"count" }
+        ])
 
-    res.status(200).json(countGames?.[0]?.count || 0)
+        return res.status(200).json(countGames?.[0]?.count || 0)
     } catch (error) {
-        res.status(400).json('Erreur lors du decompte des parties')
+        return res.status(400).json('Erreur lors du decompte des parties')
     }
     
 }
@@ -93,9 +94,9 @@ const count = async (req, res) => {
             { $count:"count" }
         ])
 
-        res.status(200).json(countGames?.[0]?.count || 0)
+        return res.status(200).json(countGames?.[0]?.count || 0)
     } catch (error) {
-        res.status(400).json('Erreur lors du decompte des parties')
+        return res.status(400).json('Erreur lors du decompte des parties')
     }
     
 }
@@ -124,9 +125,9 @@ const getAll = async (req, res) => {
                 typeVictoire: game.typeVictoire
             }))
 
-        res.status(200).json(response)
+        return res.status(200).json(response)
     } catch (error) {
-        res.status(400).json('Erreur lors de la récupération des parties')
+        return res.status(400).json('Erreur lors de la récupération des parties')
     }
     
 }
@@ -134,19 +135,38 @@ const getAll = async (req, res) => {
 // Ajout d'une partie
 const add = async (req, res) => {
     const gameObject = req.body as Game;
-    const { config, victoire, type, isStandard, isRanked } = gameObject
+    const { config: configParties, victoire, type, isStandard, isRanked } = gameObject
 
     const gameService = new GameService
-    const deckService = new DeckService
+    // const deckService = new DeckService
+
+    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
+
+    const userId = decodedToken.id;
+    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
 
     try {
         await games.create({...gameObject})
-        await gameService.updateUserAndDeck(config, type, victoire, isStandard, isRanked, 1)
+        await gameService.updateUserAndDeck(configParties, type, victoire, isStandard, isRanked, 1)
         // await deckService.updateRank()
 
-        res.status(200).json({ config, victoire })
+        await journals.create({
+            idUser: userId,
+            action: 'Ajout partie',
+            body: {...gameObject},
+            date: new Date(),
+        })
+
+        return res.status(200).json({ config: configParties, victoire })
     } catch (error) {
-        res.status(400).json('Erreur lors de la création de la partie');
+        await journals.create({
+            idUser: userId,
+            action: 'Ajout partie',
+            body: {error},
+            date: new Date(),
+        })
+        return res.status(400).json('Erreur lors de la création de la partie');
     }
 }
 
@@ -155,6 +175,12 @@ const add = async (req, res) => {
 const hardDelete = async (req, res) => {
     const gameId = req.query.id as string;
     if (!ObjectId.isValid(gameId)) throw new Error('gameId invalide')
+
+    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
+
+    const userId = decodedToken.id;
+    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
     
     const gameService = new GameService
 
@@ -167,9 +193,22 @@ const hardDelete = async (req, res) => {
         await games.deleteOne({ _id: new ObjectId(gameId) })
         await gameService.updateUserAndDeck(config, type, victoire, isStandard, isRanked, -1)
 
-        res.status(200).json({ id: game._id, type, config, victoire, typeVictoire: game.typeVictoire, isStandard })
+        await journals.create({
+            idUser: userId,
+            action: 'Suppression partie',
+            body: {...game},
+            date: new Date(),
+        })
+
+        return res.status(200).json({ id: game._id, type, config, victoire, typeVictoire: game.typeVictoire, isStandard })
     } catch (error) {
-        res.status(400).json('Erreur lors de la suppression de la partie')
+        await journals.create({
+            idUser: userId,
+            action: 'Suppression partie',
+            body: {error},
+            date: new Date(),
+        })
+        return res.status(400).json('Erreur lors de la suppression de la partie')
     }
 }
 

@@ -84,11 +84,11 @@ const all = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 colorSpec: user.colorSpec,
             };
         })));
-        res.status(200).json(response);
+        return res.status(200).json(response);
     }
     catch (error) {
         console.error(error);
-        res.status(400).json('Erreur lors de la récupération des utilisateurs');
+        return res.status(400).json('Erreur lors de la récupération des utilisateurs');
     }
 });
 const countWins = (games, userId, isStandard) => {
@@ -126,10 +126,10 @@ const getUsersWithDecks = (req, res) => __awaiter(void 0, void 0, void 0, functi
             id: user._id,
             decks: user.decks
         }));
-        res.status(200).json(response);
+        return res.status(200).json(response);
     }
     catch (error) {
-        res.status(400).json('Erreur lors de la récupération des decks et utilisateurs');
+        return res.status(400).json('Erreur lors de la récupération des decks et utilisateurs');
     }
 });
 // Mise à jour utilisateur
@@ -160,10 +160,10 @@ const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 colorSpec,
             }
         });
-        res.status(200).json({ nom, prenom, colorStd, colorSpec });
+        return res.status(200).json({ nom, prenom, colorStd, colorSpec });
     }
     catch (error) {
-        res.status(400).json('Erreur lors de la modification de l\'utilisateur');
+        return res.status(400).json('Erreur lors de la modification de l\'utilisateur');
     }
 });
 exports.default = { getOne, update, all, getUsersWithDecks };

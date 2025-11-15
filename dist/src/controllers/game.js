@@ -17,7 +17,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = require("../config/config");
 const games_1 = __importDefault(require("../models/games"));
 const GameService_1 = __importDefault(require("../services/GameService"));
-const DeckService_1 = __importDefault(require("../services/DeckService"));
+const journal_1 = __importDefault(require("../models/journal"));
 // Récuperation de l'historique de mes parties
 const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.headers.authorization.split(' ')[1];
@@ -44,10 +44,10 @@ const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             victoire: game.victoire,
             typeVictoire: game.typeVictoire
         }));
-        res.status(200).json(response);
+        return res.status(200).json(response);
     }
     catch (error) {
-        res.status(400).json('Erreur lors de la récupération des parties');
+        return res.status(400).json('Erreur lors de la récupération des parties');
     }
 });
 // Compte le nombre de parties
@@ -66,10 +66,10 @@ const historyCount = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             { $match: Object.assign({ "config.userId": userId }, query) },
             { $count: "count" }
         ]);
-        res.status(200).json(((_a = countGames === null || countGames === void 0 ? void 0 : countGames[0]) === null || _a === void 0 ? void 0 : _a.count) || 0);
+        return res.status(200).json(((_a = countGames === null || countGames === void 0 ? void 0 : countGames[0]) === null || _a === void 0 ? void 0 : _a.count) || 0);
     }
     catch (error) {
-        res.status(400).json('Erreur lors du decompte des parties');
+        return res.status(400).json('Erreur lors du decompte des parties');
     }
 });
 // Compte le nombre de parties
@@ -83,10 +83,10 @@ const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             { $match: query },
             { $count: "count" }
         ]);
-        res.status(200).json(((_a = countGames === null || countGames === void 0 ? void 0 : countGames[0]) === null || _a === void 0 ? void 0 : _a.count) || 0);
+        return res.status(200).json(((_a = countGames === null || countGames === void 0 ? void 0 : countGames[0]) === null || _a === void 0 ? void 0 : _a.count) || 0);
     }
     catch (error) {
-        res.status(400).json('Erreur lors du decompte des parties');
+        return res.status(400).json('Erreur lors du decompte des parties');
     }
 });
 // Récuperation des parties
@@ -109,26 +109,43 @@ const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             victoire: game.victoire,
             typeVictoire: game.typeVictoire
         }));
-        res.status(200).json(response);
+        return res.status(200).json(response);
     }
     catch (error) {
-        res.status(400).json('Erreur lors de la récupération des parties');
+        return res.status(400).json('Erreur lors de la récupération des parties');
     }
 });
 // Ajout d'une partie
 const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const gameObject = req.body;
-    const { config, victoire, type, isStandard, isRanked } = gameObject;
+    const { config: configParties, victoire, type, isStandard, isRanked } = gameObject;
     const gameService = new GameService_1.default;
-    const deckService = new DeckService_1.default;
+    // const deckService = new DeckService
+    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
+    const userId = decodedToken.id;
+    if (!mongodb_1.ObjectId.isValid(userId))
+        throw new Error('userId invalide');
     try {
         yield games_1.default.create(Object.assign({}, gameObject));
-        yield gameService.updateUserAndDeck(config, type, victoire, isStandard, isRanked, 1);
+        yield gameService.updateUserAndDeck(configParties, type, victoire, isStandard, isRanked, 1);
         // await deckService.updateRank()
-        res.status(200).json({ config, victoire });
+        yield journal_1.default.create({
+            idUser: userId,
+            action: 'Ajout partie',
+            body: Object.assign({}, gameObject),
+            date: new Date(),
+        });
+        return res.status(200).json({ config: configParties, victoire });
     }
     catch (error) {
-        res.status(400).json('Erreur lors de la création de la partie');
+        yield journal_1.default.create({
+            idUser: userId,
+            action: 'Ajout partie',
+            body: { error },
+            date: new Date(),
+        });
+        return res.status(400).json('Erreur lors de la création de la partie');
     }
 });
 // Suppression d'une partie
@@ -136,6 +153,11 @@ const hardDelete = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     const gameId = req.query.id;
     if (!mongodb_1.ObjectId.isValid(gameId))
         throw new Error('gameId invalide');
+    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
+    const userId = decodedToken.id;
+    if (!mongodb_1.ObjectId.isValid(userId))
+        throw new Error('userId invalide');
     const gameService = new GameService_1.default;
     try {
         const game = yield games_1.default.findById(gameId);
@@ -144,10 +166,22 @@ const hardDelete = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         const { config, victoire, type, isStandard, isRanked } = game;
         yield games_1.default.deleteOne({ _id: new mongodb_1.ObjectId(gameId) });
         yield gameService.updateUserAndDeck(config, type, victoire, isStandard, isRanked, -1);
-        res.status(200).json({ id: game._id, type, config, victoire, typeVictoire: game.typeVictoire, isStandard });
+        yield journal_1.default.create({
+            idUser: userId,
+            action: 'Suppression partie',
+            body: Object.assign({}, game),
+            date: new Date(),
+        });
+        return res.status(200).json({ id: game._id, type, config, victoire, typeVictoire: game.typeVictoire, isStandard });
     }
     catch (error) {
-        res.status(400).json('Erreur lors de la suppression de la partie');
+        yield journal_1.default.create({
+            idUser: userId,
+            action: 'Suppression partie',
+            body: { error },
+            date: new Date(),
+        });
+        return res.status(400).json('Erreur lors de la suppression de la partie');
     }
 });
 exports.default = { getAll, add, history, count, historyCount, hardDelete };
