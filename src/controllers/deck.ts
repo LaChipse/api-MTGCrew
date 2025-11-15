@@ -245,9 +245,25 @@ const update = async (req, res) => {
         { $set: { ...deckObject } }
     )
         .then(async () => { 
+            await journals.create({
+                idUser: userId,
+                body: {...deckObject},
+                action: 'Mise à jour du deck',
+                date: new Date()
+            });
+
             return res.status(204).json('Deck modifié')
         })
-        .catch(() => res.status(500).json('Erreur lors de la modification du deck'));
+        .catch(async (error) => {
+            await journals.create({
+                idUser: userId,
+                body: {error},
+                action: 'Mise à jour du deck',
+                date: new Date()
+            });
+
+            return res.status(500).json('Erreur lors de la modification du deck');
+        })
 }
 
 export default { getAll, getMine, add, softDelete, update, getUserDeck, getDeckIllustration, getOne, updateRank };
