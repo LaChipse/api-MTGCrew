@@ -35,11 +35,11 @@ const getOne = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const userId = decodedToken.id;
     if (!mongodb_1.ObjectId.isValid(userId))
-        throw new Error('userId invalide');
+        return res.status(422).json('Données reçues invalides');
     try {
         const user = yield users_1.default.findById(userId);
         if (!user)
-            res.status(401).json('Requête non authentifiée !');
+            res.status(404).json('utilisateur introuvable !');
         if (user) {
             const userObject = user.toObject();
             const { password, _id } = userObject, restUser = __rest(userObject, ["password", "_id"]);
@@ -47,7 +47,7 @@ const getOne = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
     }
     catch (error) {
-        res.status(400).json('Erreur lors de la récupération de l\'utilisateur');
+        res.status(500).json('Erreur lors de la récupération de l\'utilisateur');
     }
 });
 // Récupération des utilisateurs
@@ -88,7 +88,7 @@ const all = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
     catch (error) {
         console.error(error);
-        return res.status(400).json('Erreur lors de la récupération des utilisateurs');
+        return res.status(500).json('Erreur lors de la récupération des utilisateurs');
     }
 });
 const countWins = (games, userId, isStandard) => {
@@ -129,7 +129,7 @@ const getUsersWithDecks = (req, res) => __awaiter(void 0, void 0, void 0, functi
         return res.status(200).json(response);
     }
     catch (error) {
-        return res.status(400).json('Erreur lors de la récupération des decks et utilisateurs');
+        return res.status(500).json('Erreur lors de la récupération des decks et utilisateurs');
     }
 });
 // Mise à jour utilisateur
@@ -138,7 +138,7 @@ const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const userId = decodedToken.id;
     if (!mongodb_1.ObjectId.isValid(userId))
-        throw new Error('userId invalide');
+        return res.status(422).json('Données reçues invalides');
     const { nom, prenom, password, colorStd, colorSpec } = req.body;
     try {
         if (password) {
@@ -163,7 +163,7 @@ const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         return res.status(200).json({ nom, prenom, colorStd, colorSpec });
     }
     catch (error) {
-        return res.status(400).json('Erreur lors de la modification de l\'utilisateur');
+        return res.status(500).json('Erreur lors de la modification de l\'utilisateur');
     }
 });
 exports.default = { getOne, update, all, getUsersWithDecks };

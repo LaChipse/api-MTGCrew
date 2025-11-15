@@ -1,10 +1,9 @@
-import { ObjectId } from 'mongodb'
-import jwt, { JwtPayload } from 'jsonwebtoken';
-import { config } from '../config/config';
+import { JwtPayload } from 'jsonwebtoken';
+import { ObjectId } from 'mongodb';
 import games, { Game } from '../models/games';
-import GameService from '../services/GameService';
-import DeckService from '../services/DeckService';
 import journals from '../models/journal';
+import AuthService from '../services/AuthService';
+import GameService from '../services/GameService';
 
 interface TokenPayload extends JwtPayload {
     id: string;
@@ -12,18 +11,18 @@ interface TokenPayload extends JwtPayload {
 
 // Récuperation de l'historique de mes parties
 const history = async (req, res) => {
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
     const gameService = new GameService
+    const authService = new AuthService
 
-    const userId = decodedToken.id;
-    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
+    const userId = await authService.isValidId(req);
+    if (!userId) return res.status(422).json('Données reçues invalides');
 
     const page = Number(req.params.page) || 1;
     const isStandard = req.params.type === 'true';
-    const { query, sort } = gameService.getQuery(isStandard, req.query)
-
+    
     try {
+        const { query, sort } = gameService.getQuery(isStandard, req.query)
+
         const allGames = await games.aggregate([
             { $match: {
                     "config.userId": userId,
@@ -41,31 +40,31 @@ const history = async (req, res) => {
                 type: game.type,
                 config: game.config,
                 victoire: game.victoire, 
-                typeVictoire: game.typeVictoire
+                typeVictoire: game.typeVictoire,
+                isRanked: game.isRanked
             }
         ))
 
         return res.status(200).json(response)
     } catch (error) {
-        return res.status(400).json('Erreur lors de la récupération des parties')
+        return res.status(500).json('Erreur lors de la récupération des parties')
     }
-    
 }
 
 
 // Compte le nombre de parties
 const historyCount = async (req, res) => {
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
+    const authService = new AuthService
     const gameService = new GameService
 
-    const userId = decodedToken.id;
-    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
+    const userId = await authService.isValidId(req);
+    if (!userId) return res.status(422).json('Données reçues invalides');
 
     const isStandard = req.params.type === 'true';
-    const { query } = gameService.getQuery(isStandard, req.query)
-
+    
     try {
+        const { query } = gameService.getQuery(isStandard, req.query)
+
         const countGames = await games.aggregate([
             { $match: {
                     "config.userId": userId,
@@ -76,9 +75,8 @@ const historyCount = async (req, res) => {
 
         return res.status(200).json(countGames?.[0]?.count || 0)
     } catch (error) {
-        return res.status(400).json('Erreur lors du decompte des parties')
+        return res.status(500).json('Erreur lors du decompte des parties')
     }
-    
 }
 
 // Compte le nombre de parties
@@ -86,9 +84,10 @@ const count = async (req, res) => {
     const gameService = new GameService
 
     const isStandard = req.params.type === 'true';
-    const { query } = gameService.getQuery(isStandard, req.query)
-
+    
     try {
+        const { query } = gameService.getQuery(isStandard, req.query)
+
         const countGames = await games.aggregate([
             { $match: query },
             { $count:"count" }
@@ -96,7 +95,7 @@ const count = async (req, res) => {
 
         return res.status(200).json(countGames?.[0]?.count || 0)
     } catch (error) {
-        return res.status(400).json('Erreur lors du decompte des parties')
+        return res.status(500).json('Erreur lors du decompte des parties')
     }
     
 }
@@ -107,9 +106,10 @@ const getAll = async (req, res) => {
 
     const page = Number(req.params.page) || 1;
     const isStandard = req.params.type === 'true';
-    const { query, sort } = gameService.getQuery(isStandard, req.query)
-
+    
     try {
+        const { query, sort } = gameService.getQuery(isStandard, req.query)
+
         const allGames = await games
             .find(query)
             .sort(sort)
@@ -122,29 +122,29 @@ const getAll = async (req, res) => {
                 type: game.type,
                 config: game.config,
                 victoire: game.victoire, 
-                typeVictoire: game.typeVictoire
+                typeVictoire: game.typeVictoire,
+                isRanked: game.isRanked
             }))
 
         return res.status(200).json(response)
     } catch (error) {
-        return res.status(400).json('Erreur lors de la récupération des parties')
+        return res.status(500).json('Erreur lors de la récupération des parties')
     }
     
 }
 
 // Ajout d'une partie
 const add = async (req, res) => {
+    const authService = new AuthService
+    const gameService = new GameService
+
     const gameObject = req.body as Game;
     const { config: configParties, victoire, type, isStandard, isRanked } = gameObject
 
-    const gameService = new GameService
+    const userId = await authService.isValidId(req);
+    if (!userId) return res.status(422).json('Données reçues invalides');
+
     // const deckService = new DeckService
-
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
-
-    const userId = decodedToken.id;
-    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
 
     try {
         await games.create({...gameObject})
@@ -158,7 +158,7 @@ const add = async (req, res) => {
             date: new Date(),
         })
 
-        return res.status(200).json({ config: configParties, victoire })
+        return res.status(201).json({ config: configParties, victoire })
     } catch (error) {
         await journals.create({
             idUser: userId,
@@ -166,23 +166,21 @@ const add = async (req, res) => {
             body: {error},
             date: new Date(),
         })
-        return res.status(400).json('Erreur lors de la création de la partie');
+        return res.status(500).json('Erreur lors de la création de la partie');
     }
 }
 
 
 // Suppression d'une partie
 const hardDelete = async (req, res) => {
-    const gameId = req.query.id as string;
-    if (!ObjectId.isValid(gameId)) throw new Error('gameId invalide')
-
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
-
-    const userId = decodedToken.id;
-    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
-    
+    const authService = new AuthService
     const gameService = new GameService
+
+    const userId = await authService.isValidId(req);
+    if (!userId) return res.status(422).json('Données reçues invalides');
+
+    const gameId = req.query.id as string;
+    if (!ObjectId.isValid(gameId)) return res.status(422).json('Données reçues invalides')
 
     try {
         const game = await games.findById(gameId)
@@ -208,7 +206,7 @@ const hardDelete = async (req, res) => {
             body: {error},
             date: new Date(),
         })
-        return res.status(400).json('Erreur lors de la suppression de la partie')
+        return res.status(500).json('Erreur lors de la suppression de la partie')
     }
 }
 

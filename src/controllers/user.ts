@@ -15,20 +15,20 @@ const getOne = async (req, res) => {
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
 
     const userId = decodedToken.id;
-    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
+    if (!ObjectId.isValid(userId)) return res.status(422).json('Données reçues invalides')
     
     try {
         const user = await users.findById(userId)
-
-        if (!user) res.status(401).json('Requête non authentifiée !')
+        if (!user) res.status(404).json('utilisateur introuvable !')
 
         if (user) {
             const userObject = user.toObject();
             const { password, _id, ...restUser } = userObject;
+
             res.status(200).json({ ...restUser, id: _id })
         }
     } catch (error) {
-        res.status(400).json('Erreur lors de la récupération de l\'utilisateur')
+        res.status(500).json('Erreur lors de la récupération de l\'utilisateur')
     }    
 }
 
@@ -85,7 +85,7 @@ const all = async (req, res) => {
         return res.status(200).json(response);
     } catch (error) {
         console.error(error);
-        return res.status(400).json('Erreur lors de la récupération des utilisateurs');
+        return res.status(500).json('Erreur lors de la récupération des utilisateurs');
     }
 };
 
@@ -129,7 +129,7 @@ const getUsersWithDecks = async (req, res) => {
 
         return res.status(200).json(response)
     } catch (error) {
-        return res.status(400).json('Erreur lors de la récupération des decks et utilisateurs')
+        return res.status(500).json('Erreur lors de la récupération des decks et utilisateurs')
     }
 }
 
@@ -139,7 +139,7 @@ const update = async (req, res) => {
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
 
     const userId = decodedToken.id;
-    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
+    if (!ObjectId.isValid(userId)) return res.status(422).json('Données reçues invalides')
 
     const { nom, prenom, password, colorStd, colorSpec } = req.body
 
@@ -173,7 +173,7 @@ const update = async (req, res) => {
 
         return res.status(200).json({ nom, prenom, colorStd, colorSpec })
     } catch (error) {
-        return res.status(400).json('Erreur lors de la modification de l\'utilisateur')
+        return res.status(500).json('Erreur lors de la modification de l\'utilisateur')
     }
 }
 

@@ -12,31 +12,29 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const decks_1 = __importDefault(require("../models/decks"));
 const mongodb_1 = require("mongodb");
-const config_1 = require("../config/config");
-const users_1 = __importDefault(require("../models/users"));
-const ScryFallService_1 = __importDefault(require("../services/ScryFallService"));
-const DeckService_1 = __importDefault(require("../services/DeckService"));
+const decks_1 = __importDefault(require("../models/decks"));
 const journal_1 = __importDefault(require("../models/journal"));
+const users_1 = __importDefault(require("../models/users"));
+const AuthService_1 = __importDefault(require("../services/AuthService"));
+const DeckService_1 = __importDefault(require("../services/DeckService"));
+const ScryFallService_1 = __importDefault(require("../services/ScryFallService"));
 // Récuperation de mes decks
 const getMine = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const authService = new AuthService_1.default;
     let sort = { nom: 1 };
     if (req.query.sortKey)
         sort = { [req.query.sortKey]: req.query.sortDirection === '1' ? 1 : -1 };
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
-    const userId = decodedToken.id;
-    if (!mongodb_1.ObjectId.isValid(userId))
-        throw new Error('userId invalide');
+    const userId = yield authService.isValidId(req);
+    if (!userId)
+        return res.status(422).json('Données reçues invalides');
     const objectUserId = new mongodb_1.ObjectId(userId);
     try {
         const mineDecks = yield decks_1.default.find({ userId: objectUserId }).sort(sort);
         return res.status(200).json(mineDecks);
     }
     catch (error) {
-        return res.status(400).json('Erreur lors de la récupération des decks');
+        return res.status(500).json('Erreur lors de la récupération des decks');
     }
 });
 // Récuperation des decks d'un joueur
@@ -46,14 +44,14 @@ const getUserDeck = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     if (req.query.sortKey)
         sort = { [req.query.sortKey]: req.query.sortDirection === '1' ? 1 : -1 };
     if (!mongodb_1.ObjectId.isValid(userId))
-        throw new Error('userId invalide');
+        return res.status(422).json('Données reçues invalides');
     const objectUserId = new mongodb_1.ObjectId(userId);
     try {
         const userDecks = yield decks_1.default.find({ userId: objectUserId }).sort(sort);
         return res.status(200).json(userDecks);
     }
     catch (error) {
-        return res.status(400).json('Erreur lors de la récupération du deck du joueur');
+        return res.status(500).json('Erreur lors de la récupération du deck du joueur');
     }
 });
 // Récuperation des decks
@@ -88,12 +86,11 @@ const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 //Mise à jour des ranks
 const updateRank = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const authService = new AuthService_1.default;
     const deckService = new DeckService_1.default;
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
-    const userId = decodedToken.id;
-    if (!mongodb_1.ObjectId.isValid(userId))
-        throw new Error('userId invalide');
+    const userId = yield authService.isValidId(req);
+    if (!userId)
+        return res.status(422).json('Données reçues invalides');
     try {
         const result = yield deckService.updateRank();
         yield journal_1.default.create({
@@ -114,11 +111,11 @@ const updateRank = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         return res.status(400).json('Erreur lors de la msie a jour des ranks');
     }
 });
+// Récupération de un seul deck
 const getOne = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const deckId = req.params.id;
     if (!mongodb_1.ObjectId.isValid(deckId))
-        throw new Error('deckId invalide');
-    const objectDeckId = new mongodb_1.ObjectId(deckId);
+        return res.status(422).json('Données reçues invalides');
     try {
         const deck = yield decks_1.default.findById(deckId);
         if (!deck)
@@ -126,9 +123,10 @@ const getOne = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         return res.status(200).json(deck);
     }
     catch (e) {
-        return res.status(400).json('Erreur lors de la récupération du deck');
+        return res.status(500).json('Erreur lors de la récupération du deck');
     }
 });
+// Récupération de l'illustration
 const getDeckIllustration = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { fuzzyName } = req.query;
     const scryfallService = new ScryFallService_1.default;
@@ -148,12 +146,11 @@ const getDeckIllustration = (req, res) => __awaiter(void 0, void 0, void 0, func
 });
 // Ajout d'un deck
 const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const authService = new AuthService_1.default;
     const deckObject = req.body;
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
-    const userId = decodedToken.id;
-    if (!mongodb_1.ObjectId.isValid(userId))
-        throw new Error('userId invalide');
+    const userId = yield authService.isValidId(req);
+    if (!userId)
+        return res.status(422).json('Données reçues invalides');
     yield decks_1.default.create(Object.assign(Object.assign({}, deckObject), { userId: new mongodb_1.ObjectId(userId), parties: { standard: 0, special: 0 }, victoires: { standard: 0, special: 0 }, elo: 0 }))
         .then(() => __awaiter(void 0, void 0, void 0, function* () {
         yield users_1.default.updateOne({ _id: new mongodb_1.ObjectId(userId) }, { $inc: { nbrDecks: 1 } });
@@ -163,7 +160,7 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             action: 'Ajout d\'un deck',
             date: new Date()
         });
-        return res.status(200).json('deck ajouté');
+        return res.status(201).json('Deck ajouté');
     }))
         .catch((error) => __awaiter(void 0, void 0, void 0, function* () {
         yield journal_1.default.create({
@@ -171,24 +168,23 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             action: 'Ajout d\'un deck',
             date: new Date()
         });
-        return res.status(400).json('Erreur lors de l\'ajout du deck');
+        return res.status(500).json('Erreur lors de l\'ajout du deck');
     }));
 });
 // Suppression d'un deck
 const softDelete = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const authService = new AuthService_1.default;
     const deckId = req.query.id;
     if (!mongodb_1.ObjectId.isValid(deckId))
-        throw new Error('deckId invalide');
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
-    const userId = decodedToken.id;
-    if (!mongodb_1.ObjectId.isValid(userId))
-        throw new Error('userId invalide');
+        res.status(422).json('Données envoyées invalides');
+    const userId = yield authService.isValidId(req);
+    if (!userId)
+        return res.status(422).json('Données reçues invalides');
     const deck = yield decks_1.default.findById(deckId);
     if (!deck)
         res.status(404).json('Deck introuvable');
     if (deck.userId !== userId)
-        res.status(401).json({ error: 'Requête non autorisée !' });
+        res.status(403).json('Requête non autorisée !');
     yield decks_1.default.deleteOne({ _id: new mongodb_1.ObjectId(deckId) })
         .then(() => __awaiter(void 0, void 0, void 0, function* () {
         yield users_1.default.updateOne({ _id: new mongodb_1.ObjectId(userId) }, { $inc: { nbrDecks: -1 } });
@@ -207,25 +203,26 @@ const softDelete = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             action: 'Suppression d\'un deck',
             date: new Date()
         });
-        return res.status(400).json('Erreur lors de la suppression du deck');
+        return res.status(500).json('Erreur lors de la suppression du deck');
     }));
 });
 // Modification d'un deck
 const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const authService = new AuthService_1.default;
     const deckObject = req.body;
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
-    const userId = decodedToken.id;
-    if (!mongodb_1.ObjectId.isValid(userId))
-        throw new Error('userId invalide');
+    const userId = yield authService.isValidId(req);
+    if (!userId)
+        return res.status(422).json('Données reçues invalides');
     const deck = yield decks_1.default.findById(deckObject.id);
+    if (!deck)
+        res.status(404).json('Deck introuvable');
     if (deck.userId !== userId)
-        res.status(401).json({ error: 'Requête non autorisée !' });
+        res.status(403).json('Requête non autorisée !');
     yield decks_1.default.updateOne({ _id: new mongodb_1.ObjectId(deckObject.id) }, { $set: Object.assign({}, deckObject) })
         .then(() => __awaiter(void 0, void 0, void 0, function* () {
-        return res.status(200).json('Deck modifié');
+        return res.status(204).json('Deck modifié');
     }))
-        .catch(() => res.status(400).json('Erreur lors de la modification du deck'));
+        .catch(() => res.status(500).json('Erreur lors de la modification du deck'));
 });
 exports.default = { getAll, getMine, add, softDelete, update, getUserDeck, getDeckIllustration, getOne, updateRank };
 //# sourceMappingURL=deck.js.map

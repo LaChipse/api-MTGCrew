@@ -9,6 +9,7 @@ export interface gameFilter {
     winnerId: string, 
     victoryRole: string,
     typeOfVictory: string,
+    isRanked: string
 }
 
 
@@ -21,7 +22,7 @@ export default class GameService {
      * @param {gameFilter} filters - Filtres
      */
     public getQuery(isStandard: boolean, filters: gameFilter) {
-        const { startDate, endDate, winnerId, victoryRole, typeOfVictory  } = filters;
+        const { startDate, endDate, winnerId, victoryRole, typeOfVictory, isRanked } = filters;
 
         const query: Record<string, unknown> = {
             isStandard,
@@ -36,6 +37,7 @@ export default class GameService {
 
         if (victoryRole || winnerId) query.victoire = winnerId ? winnerId : victoryRole
         if (typeOfVictory) query.typeVictoire = typeOfVictory
+        if (!!isRanked) query.isRanked = isRanked === 'true' ? true : false
 
         return { query, sort }
     }

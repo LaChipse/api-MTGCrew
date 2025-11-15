@@ -31,10 +31,10 @@ const journal_1 = __importDefault(require("../models/journal"));
 const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const userObject = req.body;
     if (!userObject.nom || !userObject.prenom || !userObject.password)
-        res.status(403).json('Champ manquant !');
+        res.status(422).json('Champ manquant !');
     const user = yield users_1.default.findOne({ nom: userObject.nom, prenom: userObject.prenom });
     if (user) {
-        res.status(401).json('Cet utilisateur est déjà enregistré !');
+        res.status(400).json('Cet utilisateur est déjà enregistré !');
     }
     else {
         try {
@@ -71,9 +71,8 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         res.status(404).json('Utilisateur non trouvé !');
     try {
         const valid = yield bcrypt_1.default.compare(userObject.password, user.password);
-        if (!valid) {
+        if (!valid)
             return res.status(403).json('Mot de passe incorrect !');
-        }
         yield journal_1.default.create({
             body: Object.assign({}, user.toObject()),
             action: 'Connexion',

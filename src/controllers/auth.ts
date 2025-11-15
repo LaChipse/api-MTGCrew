@@ -7,11 +7,11 @@ import journals from '../models/journal';
 //Création d'un utilisateur
 const signup = async (req, res) => {
     const userObject = req.body;
-    if(!userObject.nom || !userObject.prenom || !userObject.password) res.status(403).json('Champ manquant !')
+    if (!userObject.nom || !userObject.prenom || !userObject.password) res.status(422).json('Champ manquant !')
         
     const user = await users.findOne({ nom: userObject.nom, prenom: userObject.prenom })
     if (user) {
-        res.status(401).json('Cet utilisateur est déjà enregistré !')
+        res.status(400).json('Cet utilisateur est déjà enregistré !')
     } else {
         try {
             const hash = await bcrypt.hash(userObject.password, 10);
@@ -58,10 +58,7 @@ const login = async (req, res) => {
 
     try {
         const valid = await bcrypt.compare(userObject.password, user.password);
-
-        if (!valid) {
-            return res.status(403).json('Mot de passe incorrect !');
-        }
+        if (!valid) return res.status(403).json('Mot de passe incorrect !');
 
         await journals.create({
             body: {...user.toObject()},

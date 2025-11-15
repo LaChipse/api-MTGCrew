@@ -13,23 +13,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongodb_1 = require("mongodb");
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const config_1 = require("../config/config");
 const games_1 = __importDefault(require("../models/games"));
-const GameService_1 = __importDefault(require("../services/GameService"));
 const journal_1 = __importDefault(require("../models/journal"));
+const AuthService_1 = __importDefault(require("../services/AuthService"));
+const GameService_1 = __importDefault(require("../services/GameService"));
 // Récuperation de l'historique de mes parties
 const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
     const gameService = new GameService_1.default;
-    const userId = decodedToken.id;
-    if (!mongodb_1.ObjectId.isValid(userId))
-        throw new Error('userId invalide');
+    const authService = new AuthService_1.default;
+    const userId = yield authService.isValidId(req);
+    if (!userId)
+        return res.status(422).json('Données reçues invalides');
     const page = Number(req.params.page) || 1;
     const isStandard = req.params.type === 'true';
-    const { query, sort } = gameService.getQuery(isStandard, req.query);
     try {
+        const { query, sort } = gameService.getQuery(isStandard, req.query);
         const allGames = yield games_1.default.aggregate([
             { $match: Object.assign({ "config.userId": userId }, query) },
             { $sort: sort },
@@ -42,26 +40,26 @@ const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             type: game.type,
             config: game.config,
             victoire: game.victoire,
-            typeVictoire: game.typeVictoire
+            typeVictoire: game.typeVictoire,
+            isRanked: game.isRanked
         }));
         return res.status(200).json(response);
     }
     catch (error) {
-        return res.status(400).json('Erreur lors de la récupération des parties');
+        return res.status(500).json('Erreur lors de la récupération des parties');
     }
 });
 // Compte le nombre de parties
 const historyCount = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
+    const authService = new AuthService_1.default;
     const gameService = new GameService_1.default;
-    const userId = decodedToken.id;
-    if (!mongodb_1.ObjectId.isValid(userId))
-        throw new Error('userId invalide');
+    const userId = yield authService.isValidId(req);
+    if (!userId)
+        return res.status(422).json('Données reçues invalides');
     const isStandard = req.params.type === 'true';
-    const { query } = gameService.getQuery(isStandard, req.query);
     try {
+        const { query } = gameService.getQuery(isStandard, req.query);
         const countGames = yield games_1.default.aggregate([
             { $match: Object.assign({ "config.userId": userId }, query) },
             { $count: "count" }
@@ -69,7 +67,7 @@ const historyCount = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         return res.status(200).json(((_a = countGames === null || countGames === void 0 ? void 0 : countGames[0]) === null || _a === void 0 ? void 0 : _a.count) || 0);
     }
     catch (error) {
-        return res.status(400).json('Erreur lors du decompte des parties');
+        return res.status(500).json('Erreur lors du decompte des parties');
     }
 });
 // Compte le nombre de parties
@@ -77,8 +75,8 @@ const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const gameService = new GameService_1.default;
     const isStandard = req.params.type === 'true';
-    const { query } = gameService.getQuery(isStandard, req.query);
     try {
+        const { query } = gameService.getQuery(isStandard, req.query);
         const countGames = yield games_1.default.aggregate([
             { $match: query },
             { $count: "count" }
@@ -86,7 +84,7 @@ const count = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         return res.status(200).json(((_a = countGames === null || countGames === void 0 ? void 0 : countGames[0]) === null || _a === void 0 ? void 0 : _a.count) || 0);
     }
     catch (error) {
-        return res.status(400).json('Erreur lors du decompte des parties');
+        return res.status(500).json('Erreur lors du decompte des parties');
     }
 });
 // Récuperation des parties
@@ -94,8 +92,8 @@ const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const gameService = new GameService_1.default;
     const page = Number(req.params.page) || 1;
     const isStandard = req.params.type === 'true';
-    const { query, sort } = gameService.getQuery(isStandard, req.query);
     try {
+        const { query, sort } = gameService.getQuery(isStandard, req.query);
         const allGames = yield games_1.default
             .find(query)
             .sort(sort)
@@ -107,25 +105,25 @@ const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             type: game.type,
             config: game.config,
             victoire: game.victoire,
-            typeVictoire: game.typeVictoire
+            typeVictoire: game.typeVictoire,
+            isRanked: game.isRanked
         }));
         return res.status(200).json(response);
     }
     catch (error) {
-        return res.status(400).json('Erreur lors de la récupération des parties');
+        return res.status(500).json('Erreur lors de la récupération des parties');
     }
 });
 // Ajout d'une partie
 const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const authService = new AuthService_1.default;
+    const gameService = new GameService_1.default;
     const gameObject = req.body;
     const { config: configParties, victoire, type, isStandard, isRanked } = gameObject;
-    const gameService = new GameService_1.default;
+    const userId = yield authService.isValidId(req);
+    if (!userId)
+        return res.status(422).json('Données reçues invalides');
     // const deckService = new DeckService
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
-    const userId = decodedToken.id;
-    if (!mongodb_1.ObjectId.isValid(userId))
-        throw new Error('userId invalide');
     try {
         yield games_1.default.create(Object.assign({}, gameObject));
         yield gameService.updateUserAndDeck(configParties, type, victoire, isStandard, isRanked, 1);
@@ -136,7 +134,7 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             body: Object.assign({}, gameObject),
             date: new Date(),
         });
-        return res.status(200).json({ config: configParties, victoire });
+        return res.status(201).json({ config: configParties, victoire });
     }
     catch (error) {
         yield journal_1.default.create({
@@ -145,20 +143,19 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             body: { error },
             date: new Date(),
         });
-        return res.status(400).json('Erreur lors de la création de la partie');
+        return res.status(500).json('Erreur lors de la création de la partie');
     }
 });
 // Suppression d'une partie
 const hardDelete = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const authService = new AuthService_1.default;
+    const gameService = new GameService_1.default;
+    const userId = yield authService.isValidId(req);
+    if (!userId)
+        return res.status(422).json('Données reçues invalides');
     const gameId = req.query.id;
     if (!mongodb_1.ObjectId.isValid(gameId))
-        throw new Error('gameId invalide');
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
-    const userId = decodedToken.id;
-    if (!mongodb_1.ObjectId.isValid(userId))
-        throw new Error('userId invalide');
-    const gameService = new GameService_1.default;
+        return res.status(422).json('Données reçues invalides');
     try {
         const game = yield games_1.default.findById(gameId);
         if (!game)
@@ -181,7 +178,7 @@ const hardDelete = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             body: { error },
             date: new Date(),
         });
-        return res.status(400).json('Erreur lors de la suppression de la partie');
+        return res.status(500).json('Erreur lors de la suppression de la partie');
     }
 });
 exports.default = { getAll, add, history, count, historyCount, hardDelete };

@@ -1,28 +1,26 @@
-import jwt, { JwtPayload } from 'jsonwebtoken'
-import decks from '../models/decks'
-import { ObjectId } from 'mongodb'
-import { config } from '../config/config';
-import users from '../models/users';
-import ScryfallService from '../services/ScryFallService';
-import DeckService from '../services/DeckService';
+import { JwtPayload } from 'jsonwebtoken';
+import { ObjectId } from 'mongodb';
+import decks from '../models/decks';
 import journals from '../models/journal';
+import users from '../models/users';
+import AuthService from '../services/AuthService';
+import DeckService from '../services/DeckService';
+import ScryfallService from '../services/ScryFallService';
 
-interface TokenPayload extends JwtPayload {
+export interface TokenPayload extends JwtPayload {
     id: string;
 }
 
 // Récuperation de mes decks
 const getMine = async (req, res) => {
+    const authService = new AuthService
     let sort: Record<string, -1 | 1> = { nom : 1 }
 
     if (req.query.sortKey) sort = { [req.query.sortKey]: req.query.sortDirection === '1' ? 1 : -1 };
 
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
+    const userId = await authService.isValidId(req);
+    if (!userId) return res.status(422).json('Données reçues invalides');
 
-    const userId = decodedToken.id;
-
-    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
     const objectUserId = new ObjectId(userId)
 
     try {
@@ -30,7 +28,7 @@ const getMine = async (req, res) => {
 
         return res.status(200).json(mineDecks)
     } catch (error) {
-        return res.status(400).json('Erreur lors de la récupération des decks')
+        return res.status(500).json('Erreur lors de la récupération des decks')
     }
     
 }
@@ -42,7 +40,7 @@ const getUserDeck = async (req, res) => {
 
     if (req.query.sortKey) sort = { [req.query.sortKey]: req.query.sortDirection === '1' ? 1 : -1 };
 
-    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
+    if (!ObjectId.isValid(userId)) return res.status(422).json('Données reçues invalides')
     const objectUserId = new ObjectId(userId)
 
     try {
@@ -50,7 +48,7 @@ const getUserDeck = async (req, res) => {
     
         return res.status(200).json(userDecks)
     } catch (error) {
-        return res.status(400).json('Erreur lors de la récupération du deck du joueur')
+        return res.status(500).json('Erreur lors de la récupération du deck du joueur')
     }
 }
 
@@ -90,14 +88,11 @@ const getAll = async (req, res) => {
 
 //Mise à jour des ranks
 const updateRank = async(req, res) => {
+    const authService = new AuthService
     const deckService = new DeckService
 
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
-
-    const userId = decodedToken.id;
-
-    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
+    const userId = await authService.isValidId(req)
+    if (!userId) return res.status(422).json('Données reçues invalides');
 
     try {
         const result = await deckService.updateRank()
@@ -121,11 +116,11 @@ const updateRank = async(req, res) => {
     }
 }
 
+// Récupération de un seul deck
 const getOne = async (req, res) => {
     const deckId = req.params.id as string;
 
-    if (!ObjectId.isValid(deckId)) throw new Error('deckId invalide')
-    const objectDeckId = new ObjectId(deckId)
+    if (!ObjectId.isValid(deckId)) return res.status(422).json('Données reçues invalides')
 
     try {
         const deck = await decks.findById(deckId);
@@ -133,10 +128,11 @@ const getOne = async (req, res) => {
 
         return res.status(200).json(deck)
     } catch (e) {
-        return res.status(400).json('Erreur lors de la récupération du deck')
+        return res.status(500).json('Erreur lors de la récupération du deck')
     }
 }
 
+// Récupération de l'illustration
 const getDeckIllustration = async (req, res) => {
     const { fuzzyName } = req.query
     const scryfallService = new ScryfallService
@@ -158,13 +154,11 @@ const getDeckIllustration = async (req, res) => {
 
 // Ajout d'un deck
 const add = async (req, res) => {
+    const authService = new AuthService
     const deckObject = req.body;
 
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
-
-    const userId = decodedToken.id;
-    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
+    const userId = await authService.isValidId(req);
+    if (!userId) return res.status(422).json('Données reçues invalides');
     
     await decks.create({...deckObject, userId: new ObjectId(userId), parties: {standard: 0, special: 0}, victoires: {standard: 0, special: 0}, elo: 0})
         .then(async () => { 
@@ -180,7 +174,7 @@ const add = async (req, res) => {
                 date: new Date()
             });
             
-            return res.status(200).json('deck ajouté')
+            return res.status(201).json('Deck ajouté')
         })
         .catch(async (error) => {
             await journals.create({
@@ -188,25 +182,24 @@ const add = async (req, res) => {
                 action: 'Ajout d\'un deck',
                 date: new Date()
             });
-            return res.status(400).json('Erreur lors de l\'ajout du deck')
+            return res.status(500).json('Erreur lors de l\'ajout du deck')
         });
 }
 
 // Suppression d'un deck
 const softDelete = async (req, res) => {
+    const authService = new AuthService
+
     const deckId = req.query.id as string
-    if (!ObjectId.isValid(deckId)) throw new Error('deckId invalide')
+    if (!ObjectId.isValid(deckId)) res.status(422).json('Données envoyées invalides');
 
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
-
-    const userId = decodedToken.id;
-    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
+    const userId = await authService.isValidId(req);
+    if (!userId) return res.status(422).json('Données reçues invalides');
 
     const deck = await decks.findById(deckId)
     if (!deck) res.status(404).json('Deck introuvable');
 
-    if (deck.userId !== userId) res.status(401).json({ error: 'Requête non autorisée !'});
+    if (deck.userId !== userId) res.status(403).json('Requête non autorisée !');
     
     await decks.deleteOne({ _id: new ObjectId(deckId) })
         .then(async () => { 
@@ -231,32 +224,30 @@ const softDelete = async (req, res) => {
                 action: 'Suppression d\'un deck',
                 date: new Date()
             });
-            return res.status(400).json('Erreur lors de la suppression du deck')
+            return res.status(500).json('Erreur lors de la suppression du deck')
         });
 }
 
 // Modification d'un deck
 const update = async (req, res) => {
+    const authService = new AuthService
     const deckObject = req.body;
 
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
-
-    const userId = decodedToken.id;
-    if (!ObjectId.isValid(userId)) throw new Error('userId invalide')
+    const userId = await authService.isValidId(req)
+    if (!userId) return res.status(422).json('Données reçues invalides');
 
     const deck = await decks.findById(deckObject.id)
-
-    if (deck.userId !== userId) res.status(401).json({ error: 'Requête non autorisée !'});
+    if (!deck) res.status(404).json('Deck introuvable');
+    if (deck.userId !== userId) res.status(403).json('Requête non autorisée !');
 
     await decks.updateOne(
         { _id: new ObjectId(deckObject.id as string) },
         { $set: { ...deckObject } }
     )
         .then(async () => { 
-            return res.status(200).json('Deck modifié')
+            return res.status(204).json('Deck modifié')
         })
-        .catch(() => res.status(400).json('Erreur lors de la modification du deck'));
+        .catch(() => res.status(500).json('Erreur lors de la modification du deck'));
 }
 
 export default { getAll, getMine, add, softDelete, update, getUserDeck, getDeckIllustration, getOne, updateRank };

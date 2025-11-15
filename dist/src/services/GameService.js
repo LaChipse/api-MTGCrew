@@ -22,7 +22,7 @@ class GameService {
      * @param {gameFilter} filters - Filtres
      */
     getQuery(isStandard, filters) {
-        const { startDate, endDate, winnerId, victoryRole, typeOfVictory } = filters;
+        const { startDate, endDate, winnerId, victoryRole, typeOfVictory, isRanked } = filters;
         const query = {
             isStandard,
         };
@@ -35,6 +35,8 @@ class GameService {
             query.victoire = winnerId ? winnerId : victoryRole;
         if (typeOfVictory)
             query.typeVictoire = typeOfVictory;
+        if (!!isRanked)
+            query.isRanked = isRanked === 'true' ? true : false;
         return { query, sort };
     }
     /**
