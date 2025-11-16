@@ -35,20 +35,20 @@ const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         res.status(422).json('Champ manquant !');
     const user = yield users_1.default.findOne({ nom: userObject.nom, prenom: userObject.prenom });
     if (user) {
-        yield journalService.addToJournal(Object.assign(Object.assign({}, userObject), { message: 'Cet utilisateur est déjà enregistré !', status: 400 }), 'Sign-up');
+        yield journalService.addToJournal(Object.assign(Object.assign({}, userObject), { password: 'none', message: 'Cet utilisateur est déjà enregistré !', status: 400 }), 'Sign-up');
         res.status(400).json('Cet utilisateur est déjà enregistré !');
     }
     else {
         try {
             const hash = yield bcrypt_1.default.hash(userObject.password, 10);
-            const newUser = yield users_1.default.create(Object.assign(Object.assign({}, userObject), { password: hash, nbrDecks: 0, partiesJouees: {
+            yield users_1.default.create(Object.assign(Object.assign({}, userObject), { password: hash, nbrDecks: 0, partiesJouees: {
                     standard: 0,
                     special: 0
                 }, victoires: {
                     standard: 0,
                     special: 0
                 }, colorStd: '#27E9FF', colorSpec: '#fc79efff' }));
-            yield journalService.addToJournal(Object.assign(Object.assign({}, newUser.toObject()), { status: 201 }), 'Sign-up');
+            yield journalService.addToJournal(Object.assign(Object.assign({}, userObject), { password: hash, status: 201 }), 'Sign-up');
             return res.status(201).send('Profil enregistré !');
         }
         catch (error) {
@@ -74,7 +74,8 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
         const _a = user.toObject(), { password, _id } = _a, restUser = __rest(_a, ["password", "_id"]);
         const token = jwt.sign({ id: _id }, 'shhhhh');
-        yield journalService.addToJournal(Object.assign({}, userObject), 'Connexion');
+        const hash = yield bcrypt_1.default.hash(userObject.password, 10);
+        yield journalService.addToJournal(Object.assign(Object.assign({}, userObject), { password: hash }), 'Connexion');
         return res.status(200).json({
             user: Object.assign(Object.assign({}, restUser), { id: _id }),
             token
