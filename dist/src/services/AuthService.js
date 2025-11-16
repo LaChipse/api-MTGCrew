@@ -15,21 +15,21 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const mongodb_1 = require("mongodb");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = require("../config/config");
-const journal_1 = __importDefault(require("../models/journal"));
+const JournalService_1 = __importDefault(require("./JournalService"));
 class AuthService {
     constructor() { }
+    /**
+     * Vérifie si le userId du token est valide
+     * @param {Request} req - Requete reçue
+     */
     isValidId(req) {
         return __awaiter(this, void 0, void 0, function* () {
+            const journalService = new JournalService_1.default;
             const token = req.headers.authorization.split(' ')[1];
             const decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.secret_key);
             const userId = decodedToken.id;
             if (!mongodb_1.ObjectId.isValid(userId)) {
-                yield journal_1.default.create({
-                    action: 'Identification userId',
-                    body: { decodedToken, token: token },
-                    date: new Date(),
-                    idUser: userId,
-                });
+                yield journalService.addToJournal({ decodedToken, token: token }, 'Identification userId', userId);
                 return undefined;
             }
             return userId;

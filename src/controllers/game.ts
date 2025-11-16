@@ -1,16 +1,12 @@
-import { JwtPayload } from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
+import { Request, Response } from 'express';
 import games, { Game } from '../models/games';
-import journals from '../models/journal';
 import AuthService from '../services/AuthService';
-import GameService from '../services/GameService';
-
-interface TokenPayload extends JwtPayload {
-    id: string;
-}
+import GameService, { gameFilter } from '../services/GameService';
+import JournalService from '../services/JournalService';
 
 // Récuperation de l'historique de mes parties
-const history = async (req, res) => {
+const history = async (req: Request, res: Response) => {
     const gameService = new GameService
     const authService = new AuthService
 
@@ -21,7 +17,7 @@ const history = async (req, res) => {
     const isStandard = req.params.type === 'true';
     
     try {
-        const { query, sort } = gameService.getQuery(isStandard, req.query)
+        const { query, sort } = gameService.getQuery(isStandard, req.query as unknown as gameFilter)
 
         const allGames = await games.aggregate([
             { $match: {
@@ -53,7 +49,7 @@ const history = async (req, res) => {
 
 
 // Compte le nombre de parties
-const historyCount = async (req, res) => {
+const historyCount = async (req: Request, res: Response) => {
     const authService = new AuthService
     const gameService = new GameService
 
@@ -63,7 +59,7 @@ const historyCount = async (req, res) => {
     const isStandard = req.params.type === 'true';
     
     try {
-        const { query } = gameService.getQuery(isStandard, req.query)
+        const { query } = gameService.getQuery(isStandard, req.query as unknown as gameFilter)
 
         const countGames = await games.aggregate([
             { $match: {
@@ -80,13 +76,13 @@ const historyCount = async (req, res) => {
 }
 
 // Compte le nombre de parties
-const count = async (req, res) => {
+const count = async (req: Request, res: Response) => {
     const gameService = new GameService
 
     const isStandard = req.params.type === 'true';
     
     try {
-        const { query } = gameService.getQuery(isStandard, req.query)
+        const { query } = gameService.getQuery(isStandard, req.query as unknown as gameFilter)
 
         const countGames = await games.aggregate([
             { $match: query },
@@ -101,14 +97,14 @@ const count = async (req, res) => {
 }
 
 // Récuperation des parties
-const getAll = async (req, res) => {
+const getAll = async (req: Request, res: Response) => {
     const gameService = new GameService
 
     const page = Number(req.params.page) || 1;
     const isStandard = req.params.type === 'true';
     
     try {
-        const { query, sort } = gameService.getQuery(isStandard, req.query)
+        const { query, sort } = gameService.getQuery(isStandard, req.query as unknown as gameFilter)
 
         const allGames = await games
             .find(query)
@@ -134,7 +130,8 @@ const getAll = async (req, res) => {
 }
 
 // Ajout d'une partie
-const add = async (req, res) => {
+const add = async (req: Request, res: Response) => {
+    const journalService = new JournalService
     const authService = new AuthService
     const gameService = new GameService
 
@@ -151,28 +148,20 @@ const add = async (req, res) => {
         await gameService.updateUserAndDeck(configParties, type, victoire, isStandard, isRanked, 1)
         // await deckService.updateRank()
 
-        await journals.create({
-            idUser: userId,
-            action: 'Ajout partie',
-            body: {...gameObject},
-            date: new Date(),
-        })
+        await journalService.addToJournal({...gameObject, status: 201}, 'Ajout partie', userId)
 
         return res.status(201).json({ config: configParties, victoire })
     } catch (error) {
-        await journals.create({
-            idUser: userId,
-            action: 'Ajout partie',
-            body: {error},
-            date: new Date(),
-        })
+        await journalService.addToJournal(error instanceof Error ? { message: error.message, stack: error.stack } : { error }, 'Ajout partie', userId)
+
         return res.status(500).json('Erreur lors de la création de la partie');
     }
 }
 
 
 // Suppression d'une partie
-const hardDelete = async (req, res) => {
+const hardDelete = async (req: Request, res: Response) => {
+    const journalService = new JournalService
     const authService = new AuthService
     const gameService = new GameService
 
@@ -180,32 +169,25 @@ const hardDelete = async (req, res) => {
     if (!userId) return res.status(422).json('Données reçues invalides');
 
     const gameId = req.query.id as string;
-    if (!ObjectId.isValid(gameId)) return res.status(422).json('Données reçues invalides')
+    if (!ObjectId.isValid(gameId)) res.status(422).json('Données reçues invalides')
 
     try {
         const game = await games.findById(gameId)
-        if (!game) res.status(404).json('Partie introuvable');
+        if (!game) {
+            await journalService.addToJournal({gameId, status: 404}, 'Suppression partie', userId)
+            return res.status(404).json('Partie introuvable');
+        }
 
         const { config, victoire, type, isStandard, isRanked } = game
 
         await games.deleteOne({ _id: new ObjectId(gameId) })
         await gameService.updateUserAndDeck(config, type, victoire, isStandard, isRanked, -1)
-
-        await journals.create({
-            idUser: userId,
-            action: 'Suppression partie',
-            body: {...game},
-            date: new Date(),
-        })
-
+        
+        await journalService.addToJournal({...game, status: 200}, 'Suppression partie', userId)
         return res.status(200).json({ id: game._id, type, config, victoire, typeVictoire: game.typeVictoire, isStandard })
     } catch (error) {
-        await journals.create({
-            idUser: userId,
-            action: 'Suppression partie',
-            body: {error},
-            date: new Date(),
-        })
+        await journalService.addToJournal(error instanceof Error ? { message: error.message, stack: error.stack } : { error }, 'Suppression partie', userId)
+
         return res.status(500).json('Erreur lors de la suppression de la partie')
     }
 }

@@ -91,6 +91,7 @@ const all = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         return res.status(500).json('Erreur lors de la récupération des utilisateurs');
     }
 });
+// Compte des parties gagnées
 const countWins = (games, userId, isStandard) => {
     return games.reduce((acc, game) => {
         if (isStandard) {
@@ -106,7 +107,7 @@ const countWins = (games, userId, isStandard) => {
         }
     }, 0);
 };
-//Récupere des utilisateurs et de leurs decks
+// Récupere des utilisateurs et de leurs decks
 const getUsersWithDecks = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const allUsers = yield users_1.default.aggregate([

@@ -14,9 +14,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongodb_1 = require("mongodb");
 const games_1 = __importDefault(require("../models/games"));
-const journal_1 = __importDefault(require("../models/journal"));
 const AuthService_1 = __importDefault(require("../services/AuthService"));
 const GameService_1 = __importDefault(require("../services/GameService"));
+const JournalService_1 = __importDefault(require("../services/JournalService"));
 // Récuperation de l'historique de mes parties
 const history = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const gameService = new GameService_1.default;
@@ -116,6 +116,7 @@ const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 // Ajout d'une partie
 const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const journalService = new JournalService_1.default;
     const authService = new AuthService_1.default;
     const gameService = new GameService_1.default;
     const gameObject = req.body;
@@ -128,26 +129,17 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         yield games_1.default.create(Object.assign({}, gameObject));
         yield gameService.updateUserAndDeck(configParties, type, victoire, isStandard, isRanked, 1);
         // await deckService.updateRank()
-        yield journal_1.default.create({
-            idUser: userId,
-            action: 'Ajout partie',
-            body: Object.assign({}, gameObject),
-            date: new Date(),
-        });
+        yield journalService.addToJournal(Object.assign(Object.assign({}, gameObject), { status: 201 }), 'Ajout partie', userId);
         return res.status(201).json({ config: configParties, victoire });
     }
     catch (error) {
-        yield journal_1.default.create({
-            idUser: userId,
-            action: 'Ajout partie',
-            body: { error },
-            date: new Date(),
-        });
+        yield journalService.addToJournal(error instanceof Error ? { message: error.message, stack: error.stack } : { error }, 'Ajout partie', userId);
         return res.status(500).json('Erreur lors de la création de la partie');
     }
 });
 // Suppression d'une partie
 const hardDelete = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const journalService = new JournalService_1.default;
     const authService = new AuthService_1.default;
     const gameService = new GameService_1.default;
     const userId = yield authService.isValidId(req);
@@ -155,29 +147,21 @@ const hardDelete = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         return res.status(422).json('Données reçues invalides');
     const gameId = req.query.id;
     if (!mongodb_1.ObjectId.isValid(gameId))
-        return res.status(422).json('Données reçues invalides');
+        res.status(422).json('Données reçues invalides');
     try {
         const game = yield games_1.default.findById(gameId);
-        if (!game)
-            res.status(404).json('Partie introuvable');
+        if (!game) {
+            yield journalService.addToJournal({ gameId, status: 404 }, 'Suppression partie', userId);
+            return res.status(404).json('Partie introuvable');
+        }
         const { config, victoire, type, isStandard, isRanked } = game;
         yield games_1.default.deleteOne({ _id: new mongodb_1.ObjectId(gameId) });
         yield gameService.updateUserAndDeck(config, type, victoire, isStandard, isRanked, -1);
-        yield journal_1.default.create({
-            idUser: userId,
-            action: 'Suppression partie',
-            body: Object.assign({}, game),
-            date: new Date(),
-        });
+        yield journalService.addToJournal(Object.assign(Object.assign({}, game), { status: 200 }), 'Suppression partie', userId);
         return res.status(200).json({ id: game._id, type, config, victoire, typeVictoire: game.typeVictoire, isStandard });
     }
     catch (error) {
-        yield journal_1.default.create({
-            idUser: userId,
-            action: 'Suppression partie',
-            body: { error },
-            date: new Date(),
-        });
+        yield journalService.addToJournal(error instanceof Error ? { message: error.message, stack: error.stack } : { error }, 'Suppression partie', userId);
         return res.status(500).json('Erreur lors de la suppression de la partie');
     }
 });

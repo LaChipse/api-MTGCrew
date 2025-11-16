@@ -4,7 +4,7 @@ const cors = require('cors');
 
 import mongoose from 'mongoose';
 import { config } from '../src/config/config';
-
+import { Request, Response } from 'express';
 import auth from '../src/routes/auth';
 import user from '../src/routes/user'
 import deck from '../src/routes/deck'
@@ -21,7 +21,7 @@ app.use(express.static(path.join('/', 'dist')));
 app.use(express.urlencoded({ extended: false }));
 app.use(cors());
 
-app.get("/", async (req, res) => {
+app.get("/", async (req: Request, res: Response) => {
     res.status(200).send(`Connexion réussie à MongoDB: ${(await connection).Connection.name}`);
 });
 

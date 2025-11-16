@@ -1,5 +1,6 @@
 import jwt, { JwtPayload } from 'jsonwebtoken'
 import bcrypt from 'bcrypt';
+import { Request, Response } from 'express';
 import { ObjectId } from 'mongodb'
 import users from '../models/users';
 import { config } from '../config/config';
@@ -10,7 +11,7 @@ interface TokenPayload extends JwtPayload {
 }
 
 // Récupération d'un utilisateur
-const getOne = async (req, res) => {
+const getOne = async (req: Request, res: Response) => {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
 
@@ -33,11 +34,11 @@ const getOne = async (req, res) => {
 }
 
 // Récupération des utilisateurs
-const all = async (req, res) => {
+const all = async (req: Request, res: Response) => {
     const isStandard = req.params.type === 'true';
     let sort: Record<string, -1 | 1> = { prenom : 1 }
 
-    if (req.query.sortKey) sort = { [req.query.sortKey]: req.query.sortDirection === '1' ? 1 : -1 };
+    if (req.query.sortKey) sort = { [req.query.sortKey as string]: req.query.sortDirection === '1' ? 1 : -1 };
 
     try {
         const allUsers = await users.find().sort(sort);
@@ -89,6 +90,7 @@ const all = async (req, res) => {
     }
 };
 
+// Compte des parties gagnées
 const countWins = (games: Game[], userId: string, isStandard: boolean): number => {
     return games.reduce<number>((acc, game) => {
         if (isStandard) {
@@ -103,8 +105,8 @@ const countWins = (games: Game[], userId: string, isStandard: boolean): number =
     }, 0);
 };
 
-//Récupere des utilisateurs et de leurs decks
-const getUsersWithDecks = async (req, res) => {
+// Récupere des utilisateurs et de leurs decks
+const getUsersWithDecks = async (req: Request, res: Response) => {
     try {
         const allUsers = await users.aggregate([
             { $addFields: { userId: { $toString: "$_id" }}},
@@ -134,7 +136,7 @@ const getUsersWithDecks = async (req, res) => {
 }
 
 // Mise à jour utilisateur
-const update = async (req, res) => {
+const update = async (req: Request, res: Response) => {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jwt.verify(token, config.secret_key) as TokenPayload;
 

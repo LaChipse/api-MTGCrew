@@ -41,8 +41,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const Scry = __importStar(require("scryfall-sdk"));
+const JournalService_1 = __importDefault(require("./JournalService"));
 class ScryfallService {
     constructor() { }
     /**
@@ -51,12 +55,13 @@ class ScryfallService {
      */
     getCards(fuzzyName) {
         return __awaiter(this, void 0, void 0, function* () {
+            const journalService = new JournalService_1.default;
             try {
                 const cardsByName = yield Scry.Cards.byName(fuzzyName, true);
                 return cardsByName;
             }
             catch (error) {
-                console.error('Erreur dans getCards:', error);
+                yield journalService.addToJournal(error instanceof Error ? { message: error.message, stack: error.stack } : { error }, 'Récupération carte par Scryfall');
                 throw error;
             }
         });
@@ -67,6 +72,7 @@ class ScryfallService {
      */
     getIllustrationsCards(printsUrl) {
         return __awaiter(this, void 0, void 0, function* () {
+            const journalService = new JournalService_1.default;
             try {
                 const printsResponse = yield fetch(printsUrl);
                 const printsResponseData = yield printsResponse.json();
@@ -74,11 +80,15 @@ class ScryfallService {
                 return formatIllustrationsCards;
             }
             catch (error) {
-                console.error('Erreur dans getIllustrationsCards:', error);
+                yield journalService.addToJournal(error instanceof Error ? { message: error.message, stack: error.stack } : { error }, 'Récupération illustration par Scryfall');
                 throw error;
             }
         });
     }
+    /**
+     * Formatage des différentes données d'illustrations
+     * @param {Record<'data', Array<Scry.Card>>} printsResponseData - Données d'illustrations
+     */
     formatIllustrationsCards(printsResponseData) {
         return printsResponseData.data.map((d) => {
             if (d.card_faces && Array.isArray(d.card_faces) && d.card_faces.length > 0) {

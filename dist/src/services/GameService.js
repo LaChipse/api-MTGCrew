@@ -58,6 +58,13 @@ class GameService {
             yield decks_1.default.updateMany({ _id: { $in: this.victoryIds('deckId', type, victoire, config) } }, { $inc: Object.assign({ elo: isRanked ? (incr * 2) : 0 }, (isStandard ? { 'victoires.standard': incr } : { 'victoires.special': incr })) });
         });
     }
+    /**
+     * Récupérer les utilisateurs ou decks victorieux
+     * @param {'userId' | 'deckId'} userOrDeck - Identifiant utilisateur ou deck
+     * @param {string} type - Type de victoire
+     * @param {string} victoire - Le vainqueur
+     * @param {Array<PlayersBlock>} config - Configuration joueurs
+     */
     victoryIds(userOrDeck, type, victoire, config) {
         switch (type) {
             case 'each':

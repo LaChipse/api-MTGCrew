@@ -1,22 +1,23 @@
 import { JwtPayload } from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
 import decks from '../models/decks';
-import journals from '../models/journal';
+import { Request, Response } from 'express';
 import users from '../models/users';
 import AuthService from '../services/AuthService';
 import DeckService from '../services/DeckService';
 import ScryfallService from '../services/ScryFallService';
+import JournalService from '../services/JournalService';
 
 export interface TokenPayload extends JwtPayload {
     id: string;
 }
 
 // Récuperation de mes decks
-const getMine = async (req, res) => {
+const getMine = async (req: Request, res: Response) => {
     const authService = new AuthService
     let sort: Record<string, -1 | 1> = { nom : 1 }
 
-    if (req.query.sortKey) sort = { [req.query.sortKey]: req.query.sortDirection === '1' ? 1 : -1 };
+    if (req.query.sortKey) sort = { [req.query.sortKey as string]: req.query.sortDirection === '1' ? 1 : -1 };
 
     const userId = await authService.isValidId(req);
     if (!userId) return res.status(422).json('Données reçues invalides');
@@ -34,11 +35,11 @@ const getMine = async (req, res) => {
 }
 
 // Récuperation des decks d'un joueur
-const getUserDeck = async (req, res) => {
+const getUserDeck = async (req: Request, res: Response) => {
     const userId = req.params.id as string;
     let sort: Record<string, -1 | 1> = { nom : 1 }
 
-    if (req.query.sortKey) sort = { [req.query.sortKey]: req.query.sortDirection === '1' ? 1 : -1 };
+    if (req.query.sortKey) sort = { [req.query.sortKey as string]: req.query.sortDirection === '1' ? 1 : -1 };
 
     if (!ObjectId.isValid(userId)) return res.status(422).json('Données reçues invalides')
     const objectUserId = new ObjectId(userId)
@@ -53,13 +54,13 @@ const getUserDeck = async (req, res) => {
 }
 
 // Récuperation des decks
-const getAll = async (req, res) => {
+const getAll = async (req: Request, res: Response) => {
     const { rank } = req.query;
 
     let sort: Record<string, -1 | 1> = { nom : 1 }
     const query: Record<string, unknown> = {};
 
-    if (req.query.sortKey) sort = { [req.query.sortKey]: req.query.sortDirection === '1' ? 1 : -1, nom: 1 };
+    if (req.query.sortKey) sort = { [req.query.sortKey as string]: req.query.sortDirection === '1' ? 1 : -1, nom: 1 };
     if (rank) query.rank = rank;
 
     try {
@@ -87,7 +88,8 @@ const getAll = async (req, res) => {
 }
 
 //Mise à jour des ranks
-const updateRank = async(req, res) => {
+const updateRank = async(req: Request, res: Response) => {
+    const journalService = new JournalService
     const authService = new AuthService
     const deckService = new DeckService
 
@@ -96,28 +98,18 @@ const updateRank = async(req, res) => {
 
     try {
         const result = await deckService.updateRank()
-
-        await journals.create({
-            idUser: userId,
-            body: {userId},
-            action: 'Mise à jour des ranks',
-            date: new Date()
-        });
+        await journalService.addToJournal({userId, status: 204}, 'Mise à jour des ranks', userId )
 
         return res.status(204).json({ modifiedDeck: result })
     } catch (error) {
-        await journals.create({
-            idUser: userId,
-            body: {error},
-            action: 'Mise à jour des ranks',
-            date: new Date()
-        });
+        await journalService.addToJournal(error instanceof Error ? { message: error.message, stack: error.stack } : { error }, 'Mise à jour des ranks', userId)
+
         return res.status(400).json('Erreur lors de la msie a jour des ranks')
     }
 }
 
 // Récupération de un seul deck
-const getOne = async (req, res) => {
+const getOne = async (req: Request, res: Response) => {
     const deckId = req.params.id as string;
 
     if (!ObjectId.isValid(deckId)) return res.status(422).json('Données reçues invalides')
@@ -133,12 +125,12 @@ const getOne = async (req, res) => {
 }
 
 // Récupération de l'illustration
-const getDeckIllustration = async (req, res) => {
+const getDeckIllustration = async (req: Request, res: Response) => {
     const { fuzzyName } = req.query
     const scryfallService = new ScryfallService
 
     try {
-        const cardsByName = await scryfallService.getCards( fuzzyName );
+        const cardsByName = await scryfallService.getCards( fuzzyName as string );
         const imageUris = await scryfallService.getIllustrationsCards(cardsByName.prints_search_uri)
 
         return res.status(200).json({
@@ -153,7 +145,8 @@ const getDeckIllustration = async (req, res) => {
 }
 
 // Ajout d'un deck
-const add = async (req, res) => {
+const add = async (req: Request, res: Response) => {
+    const journalService = new JournalService
     const authService = new AuthService
     const deckObject = req.body;
 
@@ -167,27 +160,20 @@ const add = async (req, res) => {
                 { $inc: { nbrDecks: 1 } }
             );
 
-            await journals.create({
-                idUser: userId,
-                body: {...deckObject},
-                action: 'Ajout d\'un deck',
-                date: new Date()
-            });
+            await journalService.addToJournal({...deckObject, status: 201}, 'Ajout d\'un deck', userId)
             
             return res.status(201).json('Deck ajouté')
         })
         .catch(async (error) => {
-            await journals.create({
-                body: {error},
-                action: 'Ajout d\'un deck',
-                date: new Date()
-            });
+            await journalService.addToJournal(error instanceof Error ? { message: error.message, stack: error.stack } : { error }, 'Ajout d\'un deck', userId)
+
             return res.status(500).json('Erreur lors de l\'ajout du deck')
         });
 }
 
 // Suppression d'un deck
-const softDelete = async (req, res) => {
+const softDelete = async (req: Request, res: Response) => {
+    const journalService = new JournalService
     const authService = new AuthService
 
     const deckId = req.query.id as string
@@ -197,9 +183,15 @@ const softDelete = async (req, res) => {
     if (!userId) return res.status(422).json('Données reçues invalides');
 
     const deck = await decks.findById(deckId)
-    if (!deck) res.status(404).json('Deck introuvable');
+    if (!deck) {
+        await journalService.addToJournal({deckId, status: 404}, 'Suppression d\'un deck', userId)
+        return  res.status(404).json('Deck introuvable');
+    }
 
-    if (deck.userId !== userId) res.status(403).json('Requête non autorisée !');
+    if (deck.userId !== userId) {
+        await journalService.addToJournal({...deck, userId, status: 403}, 'Suppression d\'un deck', userId)
+        return res.status(403).json('Requête non autorisée !');
+    }
     
     await decks.deleteOne({ _id: new ObjectId(deckId) })
         .then(async () => { 
@@ -208,28 +200,20 @@ const softDelete = async (req, res) => {
                 { $inc: { nbrDecks: -1 } }
             );
 
-            await journals.create({
-                idUser: userId,
-                body: {...deck},
-                action: 'Suppression d\'un deck',
-                date: new Date()
-            });
-            
-            return res.status(200).json('Deck supprimé')
+            await journalService.addToJournal({...deck, userId, status: 204}, 'Suppression d\'un deck', userId)
+
+            return res.status(204).json('Deck supprimé')
         })
         .catch(async (error) => {
-            await journals.create({
-                idUser: userId,
-                body: {error},
-                action: 'Suppression d\'un deck',
-                date: new Date()
-            });
+            await journalService.addToJournal(error instanceof Error ? { message: error.message, stack: error.stack } : { error }, 'Suppression d\'un deck', userId)
+
             return res.status(500).json('Erreur lors de la suppression du deck')
         });
 }
 
 // Modification d'un deck
-const update = async (req, res) => {
+const update = async (req: Request, res: Response) => {
+    const journalService = new JournalService
     const authService = new AuthService
     const deckObject = req.body;
 
@@ -237,30 +221,25 @@ const update = async (req, res) => {
     if (!userId) return res.status(422).json('Données reçues invalides');
 
     const deck = await decks.findById(deckObject.id)
-    if (!deck) res.status(404).json('Deck introuvable');
-    if (deck.userId !== userId) res.status(403).json('Requête non autorisée !');
+    if (!deck) {
+        await journalService.addToJournal({deckId: deckObject.id, status: 404}, 'Modification d\'un deck', userId)
+        res.status(404).json('Deck introuvable');
+    }
+    if (deck.userId !== userId) {
+        await journalService.addToJournal({...deck, userId, status: 403}, 'Modification d\'un deck', userId)
+        res.status(403).json('Requête non autorisée !');
+    }
 
     await decks.updateOne(
         { _id: new ObjectId(deckObject.id as string) },
         { $set: { ...deckObject } }
     )
         .then(async () => { 
-            await journals.create({
-                idUser: userId,
-                body: {...deckObject},
-                action: 'Mise à jour du deck',
-                date: new Date()
-            });
-
+            journalService.addToJournal({...deckObject, status: 204}, 'Modification d\'un deck', userId)
             return res.status(204).json('Deck modifié')
         })
         .catch(async (error) => {
-            await journals.create({
-                idUser: userId,
-                body: {error},
-                action: 'Mise à jour du deck',
-                date: new Date()
-            });
+            await journalService.addToJournal(error instanceof Error ? { message: error.message, stack: error.stack } : { error }, 'Modification d\'un deck', userId)
 
             return res.status(500).json('Erreur lors de la modification du deck');
         })

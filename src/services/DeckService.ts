@@ -3,6 +3,9 @@ import decks from "../models/decks";
 export default class DeckService {
     constructor() {}
 
+    /**
+     * Mise à jour des ranks
+     */
     public async updateRank() {
         const resultUp = await decks.updateMany(
             { 

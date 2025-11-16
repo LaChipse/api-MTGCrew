@@ -12,31 +12,25 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const decks_1 = __importDefault(require("../models/decks"));
-class DeckService {
+const journal_1 = __importDefault(require("../models/journal"));
+class JournalService {
     constructor() { }
     /**
-     * Mise à jour des ranks
+     * Ajout au journal
+     * @param {Record<string, any>} body - Data
+     * @param {string} action - Action
+     * @param {string} idUser - Identifiant User
      */
-    updateRank() {
+    addToJournal(body, action, idUser) {
         return __awaiter(this, void 0, void 0, function* () {
-            const resultUp = yield decks_1.default.updateMany({
-                rank: { $lt: 5, $ne: 0 },
-                elo: { $gte: 5 }
-            }, {
-                $set: { elo: 0 },
-                $inc: { rank: 1 }
+            yield journal_1.default.create({
+                idUser,
+                body,
+                action,
+                date: new Date()
             });
-            const resultDown = yield decks_1.default.updateMany({
-                rank: { $gt: 1, $ne: 0 },
-                elo: { $lte: -5 }
-            }, {
-                $set: { elo: 0 },
-                $inc: { rank: -1 }
-            });
-            return resultDown.modifiedCount + resultUp.modifiedCount;
         });
     }
 }
-exports.default = DeckService;
-//# sourceMappingURL=DeckService.js.map
+exports.default = JournalService;
+//# sourceMappingURL=JournalService.js.map

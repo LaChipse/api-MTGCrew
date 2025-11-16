@@ -14,11 +14,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongodb_1 = require("mongodb");
 const decks_1 = __importDefault(require("../models/decks"));
-const journal_1 = __importDefault(require("../models/journal"));
 const users_1 = __importDefault(require("../models/users"));
 const AuthService_1 = __importDefault(require("../services/AuthService"));
 const DeckService_1 = __importDefault(require("../services/DeckService"));
 const ScryFallService_1 = __importDefault(require("../services/ScryFallService"));
+const JournalService_1 = __importDefault(require("../services/JournalService"));
 // Récuperation de mes decks
 const getMine = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const authService = new AuthService_1.default;
@@ -86,6 +86,7 @@ const getAll = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 //Mise à jour des ranks
 const updateRank = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const journalService = new JournalService_1.default;
     const authService = new AuthService_1.default;
     const deckService = new DeckService_1.default;
     const userId = yield authService.isValidId(req);
@@ -93,21 +94,11 @@ const updateRank = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         return res.status(422).json('Données reçues invalides');
     try {
         const result = yield deckService.updateRank();
-        yield journal_1.default.create({
-            idUser: userId,
-            body: { userId },
-            action: 'Mise à jour des ranks',
-            date: new Date()
-        });
+        yield journalService.addToJournal({ userId, status: 204 }, 'Mise à jour des ranks', userId);
         return res.status(204).json({ modifiedDeck: result });
     }
     catch (error) {
-        yield journal_1.default.create({
-            idUser: userId,
-            body: { error },
-            action: 'Mise à jour des ranks',
-            date: new Date()
-        });
+        yield journalService.addToJournal(error instanceof Error ? { message: error.message, stack: error.stack } : { error }, 'Mise à jour des ranks', userId);
         return res.status(400).json('Erreur lors de la msie a jour des ranks');
     }
 });
@@ -146,6 +137,7 @@ const getDeckIllustration = (req, res) => __awaiter(void 0, void 0, void 0, func
 });
 // Ajout d'un deck
 const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const journalService = new JournalService_1.default;
     const authService = new AuthService_1.default;
     const deckObject = req.body;
     const userId = yield authService.isValidId(req);
@@ -154,25 +146,17 @@ const add = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     yield decks_1.default.create(Object.assign(Object.assign({}, deckObject), { userId: new mongodb_1.ObjectId(userId), parties: { standard: 0, special: 0 }, victoires: { standard: 0, special: 0 }, elo: 0 }))
         .then(() => __awaiter(void 0, void 0, void 0, function* () {
         yield users_1.default.updateOne({ _id: new mongodb_1.ObjectId(userId) }, { $inc: { nbrDecks: 1 } });
-        yield journal_1.default.create({
-            idUser: userId,
-            body: Object.assign({}, deckObject),
-            action: 'Ajout d\'un deck',
-            date: new Date()
-        });
+        yield journalService.addToJournal(Object.assign(Object.assign({}, deckObject), { status: 201 }), 'Ajout d\'un deck', userId);
         return res.status(201).json('Deck ajouté');
     }))
         .catch((error) => __awaiter(void 0, void 0, void 0, function* () {
-        yield journal_1.default.create({
-            body: { error },
-            action: 'Ajout d\'un deck',
-            date: new Date()
-        });
+        yield journalService.addToJournal(error instanceof Error ? { message: error.message, stack: error.stack } : { error }, 'Ajout d\'un deck', userId);
         return res.status(500).json('Erreur lors de l\'ajout du deck');
     }));
 });
 // Suppression d'un deck
 const softDelete = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const journalService = new JournalService_1.default;
     const authService = new AuthService_1.default;
     const deckId = req.query.id;
     if (!mongodb_1.ObjectId.isValid(deckId))
@@ -181,48 +165,51 @@ const softDelete = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     if (!userId)
         return res.status(422).json('Données reçues invalides');
     const deck = yield decks_1.default.findById(deckId);
-    if (!deck)
-        res.status(404).json('Deck introuvable');
-    if (deck.userId !== userId)
-        res.status(403).json('Requête non autorisée !');
+    if (!deck) {
+        yield journalService.addToJournal({ deckId, status: 404 }, 'Suppression d\'un deck', userId);
+        return res.status(404).json('Deck introuvable');
+    }
+    if (deck.userId !== userId) {
+        yield journalService.addToJournal(Object.assign(Object.assign({}, deck), { userId, status: 403 }), 'Suppression d\'un deck', userId);
+        return res.status(403).json('Requête non autorisée !');
+    }
     yield decks_1.default.deleteOne({ _id: new mongodb_1.ObjectId(deckId) })
         .then(() => __awaiter(void 0, void 0, void 0, function* () {
         yield users_1.default.updateOne({ _id: new mongodb_1.ObjectId(userId) }, { $inc: { nbrDecks: -1 } });
-        yield journal_1.default.create({
-            idUser: userId,
-            body: Object.assign({}, deck),
-            action: 'Suppression d\'un deck',
-            date: new Date()
-        });
-        return res.status(200).json('Deck supprimé');
+        yield journalService.addToJournal(Object.assign(Object.assign({}, deck), { userId, status: 204 }), 'Suppression d\'un deck', userId);
+        return res.status(204).json('Deck supprimé');
     }))
         .catch((error) => __awaiter(void 0, void 0, void 0, function* () {
-        yield journal_1.default.create({
-            idUser: userId,
-            body: { error },
-            action: 'Suppression d\'un deck',
-            date: new Date()
-        });
+        yield journalService.addToJournal(error instanceof Error ? { message: error.message, stack: error.stack } : { error }, 'Suppression d\'un deck', userId);
         return res.status(500).json('Erreur lors de la suppression du deck');
     }));
 });
 // Modification d'un deck
 const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const journalService = new JournalService_1.default;
     const authService = new AuthService_1.default;
     const deckObject = req.body;
     const userId = yield authService.isValidId(req);
     if (!userId)
         return res.status(422).json('Données reçues invalides');
     const deck = yield decks_1.default.findById(deckObject.id);
-    if (!deck)
+    if (!deck) {
+        yield journalService.addToJournal({ deckId: deckObject.id, status: 404 }, 'Modification d\'un deck', userId);
         res.status(404).json('Deck introuvable');
-    if (deck.userId !== userId)
+    }
+    if (deck.userId !== userId) {
+        yield journalService.addToJournal(Object.assign(Object.assign({}, deck), { userId, status: 403 }), 'Modification d\'un deck', userId);
         res.status(403).json('Requête non autorisée !');
+    }
     yield decks_1.default.updateOne({ _id: new mongodb_1.ObjectId(deckObject.id) }, { $set: Object.assign({}, deckObject) })
         .then(() => __awaiter(void 0, void 0, void 0, function* () {
+        journalService.addToJournal(Object.assign(Object.assign({}, deckObject), { status: 204 }), 'Modification d\'un deck', userId);
         return res.status(204).json('Deck modifié');
     }))
-        .catch(() => res.status(500).json('Erreur lors de la modification du deck'));
+        .catch((error) => __awaiter(void 0, void 0, void 0, function* () {
+        yield journalService.addToJournal(error instanceof Error ? { message: error.message, stack: error.stack } : { error }, 'Modification d\'un deck', userId);
+        return res.status(500).json('Erreur lors de la modification du deck');
+    }));
 });
 exports.default = { getAll, getMine, add, softDelete, update, getUserDeck, getDeckIllustration, getOne, updateRank };
 //# sourceMappingURL=deck.js.map

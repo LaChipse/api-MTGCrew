@@ -82,6 +82,13 @@ export default class GameService {
         );
     }
 
+    /**
+     * Récupérer les utilisateurs ou decks victorieux
+     * @param {'userId' | 'deckId'} userOrDeck - Identifiant utilisateur ou deck
+     * @param {string} type - Type de victoire
+     * @param {string} victoire - Le vainqueur
+     * @param {Array<PlayersBlock>} config - Configuration joueurs
+     */
     private victoryIds(userOrDeck: 'userId' | 'deckId', type: string, victoire: string, config: Array<PlayersBlock>) {
         switch (type) {
             case 'each':

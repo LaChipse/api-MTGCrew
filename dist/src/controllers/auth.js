@@ -26,14 +26,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const jwt = require('jsonwebtoken');
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const users_1 = __importDefault(require("../models/users"));
-const journal_1 = __importDefault(require("../models/journal"));
+const JournalService_1 = __importDefault(require("../services/JournalService"));
 //Création d'un utilisateur
 const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const journalService = new JournalService_1.default;
     const userObject = req.body;
     if (!userObject.nom || !userObject.prenom || !userObject.password)
         res.status(422).json('Champ manquant !');
     const user = yield users_1.default.findOne({ nom: userObject.nom, prenom: userObject.prenom });
     if (user) {
+        yield journalService.addToJournal(Object.assign(Object.assign({}, userObject), { message: 'Cet utilisateur est déjà enregistré !', status: 400 }), 'Sign-up');
         res.status(400).json('Cet utilisateur est déjà enregistré !');
     }
     else {
@@ -46,51 +48,40 @@ const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                     standard: 0,
                     special: 0
                 }, colorStd: '#27E9FF', colorSpec: '#fc79efff' }));
-            yield journal_1.default.create({
-                body: newUser.toObject(),
-                action: 'Création d\'un compte',
-                date: new Date()
-            });
+            yield journalService.addToJournal(Object.assign(Object.assign({}, newUser.toObject()), { status: 201 }), 'Sign-up');
             return res.status(201).send('Profil enregistré !');
         }
         catch (error) {
-            yield journal_1.default.create({
-                body: Object.assign({}, user.toObject()),
-                action: 'Connexion',
-                date: new Date()
-            });
+            yield journalService.addToJournal(error instanceof Error ? { message: error.message, stack: error.stack } : { error }, 'Sign-up');
             return res.status(500).json('Erreur lors de la création de l\'utilisateur');
         }
     }
 });
 //Connexion utilisateur
 const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const journalService = new JournalService_1.default;
     const userObject = req.body;
     const user = yield users_1.default.findOne({ nom: userObject.nom, prenom: userObject.prenom });
-    if (!user)
+    if (!user) {
+        yield journalService.addToJournal(Object.assign(Object.assign({}, userObject), { message: 'Utilisateur non trouvé !', status: 404 }), 'Connexion');
         res.status(404).json('Utilisateur non trouvé !');
+    }
     try {
         const valid = yield bcrypt_1.default.compare(userObject.password, user.password);
-        if (!valid)
+        if (!valid) {
+            yield journalService.addToJournal({ message: 'Mot de passe incorrect !', status: 403 }, 'Connexion');
             return res.status(403).json('Mot de passe incorrect !');
-        yield journal_1.default.create({
-            body: Object.assign({}, user.toObject()),
-            action: 'Connexion',
-            date: new Date()
-        });
+        }
         const _a = user.toObject(), { password, _id } = _a, restUser = __rest(_a, ["password", "_id"]);
         const token = jwt.sign({ id: _id }, 'shhhhh');
+        yield journalService.addToJournal(Object.assign({}, userObject), 'Connexion');
         return res.status(200).json({
             user: Object.assign(Object.assign({}, restUser), { id: _id }),
             token
         });
     }
     catch (error) {
-        yield journal_1.default.create({
-            body: { error },
-            action: 'Connexion',
-            date: new Date()
-        });
+        yield journalService.addToJournal(error instanceof Error ? { message: error.message, stack: error.stack } : { error }, 'Connexion');
         return res.status(500).json('Erreur serveur');
     }
 });
